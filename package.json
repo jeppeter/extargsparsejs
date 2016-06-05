@@ -1,0 +1,20 @@
+{
+  "name": "extargsparse",
+  "version": "0.1.0",
+  "description": "extension parser for node js",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jeppeter/extargsparsejs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "tape": "latest",
+    "mktemp": "latest"
+  },
+  "keywords": ["command", "parameters", "CLI"],
+  "author": "jeppeter@gmail.com",
+  "license": "ISC"
+}
