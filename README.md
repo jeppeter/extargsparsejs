@@ -17,8 +17,8 @@ var commandline=`
 }
 `
 parser = extargsparse.ExtArgsParse();
-parser.load\_command\_line_string(commandline);
-args = parser.parse\_command_line();
+parser.load_command_line_string(commandline);
+args = parser.parse_command_line();
 console.log('args.verbose %d',args.verbose);
 console.log('args.flag %s',args.flag);
 console.log('args.number %d',args.number);
@@ -167,8 +167,10 @@ args.subnargs ['zz','64']
 # Rule
 ### init function extargsparse.ExtArgsParse(opt)
   *  options just have a priority if not set for the value set after command line parse value can be
+    
       **  extargsparse.SUB_COMMAND_JSON_SET  get the sub command json in command line 
              For example ,if the subcommand is dep  . the --dep-json in the command will parse
+
       **  extargsparse.COMMAND_JSON_SET get the total json in command line
              it is in the --json in command
 
@@ -212,8 +214,8 @@ args.subnargs ['zz','64']
           cmdname is the command name 
           cmdfunc is the call back function when command called ,it must be exported by the js file
           cmd help  is the help information to set
-
          value must be object 
+
      **   flag mode , key can be format like this "flagname|shortflag+flagprefix##flaghelp##"
            flagname is the flag name it must be more than 1 byte
            shortflag is short letter for flag it must be 1 byte
@@ -232,6 +234,7 @@ args.subnargs ['zz','64']
            '$' : '?'  means the args can accept 0 or 1 argument
            '$' : '*'  means the args can accept 0 to n arguments
            '$' : 3    number to set ,means the args can accept 3 arguments 
+           
      **   every flag in subcommand will add subcommand prefix before it in optdest
            For example
 ```json
