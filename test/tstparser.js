@@ -525,3 +525,26 @@ test('A020', function (t) {
     t.deepEqual(args.subnargs, ['ww'], get_notice(t, 'subnargs'));
     t.end();
 });
+
+test('A021', function (t) {
+    'use strict';
+    var commandline = `{"verbose|v" : "+","rollback|R" : true,"$port|P" : {"value" : 3000,"type" : "int","nargs" : 1 ,"helpinfo" : "port to connect"},"dep" : {"list|l" : [],"string|s" : "s_var","$" : "+"}}`;
+    var parser, args;
+    var objset;
+    setup_before(t);
+    objset = {};
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    args = parser.parse_command_line(['-P', '9000', '--no-rollback', 'dep', '--dep-string', 'ee', 'ww']);
+    t.equal(args.verbose, 0, get_notice(t, 'verbose'));
+    t.equal(args.port, 9000, get_notice(t, 'port'));
+    t.equal(args.rollback, false, get_notice(t, 'rollback'));
+    t.equal(args.subcommand, 'dep', get_notice(t, 'subcommand'));
+    t.deepEqual(args.dep_list, [], get_notice(t, 'dep_list'));
+    t.equal(args.dep_string, 'ee', get_notice(t, 'dep_string'));
+    t.deepEqual(args.subnargs, ['ww'], get_notice(t, 'subnargs'));
+    extargsparse.set_attr_self(objset, args, 'dep');
+    t.equal(objset.dep_string, 'ee', get_notice(t, 'objset dep_string'));
+    t.deepEqual(objset.dep_list, [], get_notice(t, 'objset dep_list'));
+    t.end();
+});
