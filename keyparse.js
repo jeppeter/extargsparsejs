@@ -55,7 +55,7 @@ function KeyParser(prefix, key, value, isflag) {
     var dict;
     var self;
     var flagspecial = ['value', 'prefix'];
-    var flagwords = ['flagname', 'helpinfo', 'shortflag', 'nargs'];
+    var flagwords = ['flagname', 'helpinfo', 'shortflag', 'nargs', 'varname'];
     var cmdwords = ['cmdname', 'function', 'helpinfo'];
     var otherwords = ['origkey', 'iscmd', 'isflag', 'typename'];
     var formwords = ['longopt', 'shortopt', 'optdest'];
