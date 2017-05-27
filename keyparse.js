@@ -50,6 +50,49 @@ var get_value_type = function (value) {
     return typeof value;
 };
 
+function get_attr_from_string(self,attr) {
+    var sarr ;
+    var barr ;
+    var splitchar=';';
+    var idx;
+    var valid_splitchars = ';.\\/:@+';
+    var errstr ;
+
+    if (attr.startsWith('split=') && attr.length > 'split='.length) {
+        idx = 'split='.length;
+        splitchar = attr[idx];
+    }
+    if (valid_splitchars.indexOf(splitchar) < 0) {
+        errstr = util.format('[%s] not valid split char', splitchar);
+        throw new Error(errstr);
+    }
+
+    sarr = attr.split(splitchar);
+    for (idx = 0; idx < sarr.length;idx += 1) {
+        var curkv = sarr[idx];
+        barr = curkv.split('=');
+        if (barr.length < 2 || barr[0] === 'split') {
+            continue;
+        }
+        self[barr[0]] = barr[1];
+    }
+
+    return self;
+};
+
+function KeyAttr(attr) {
+    var self = {};
+
+    if (attr !== undefined && attr !== null && typeof attr === 'string') {
+        self = get_attr_from_string(self,attr);
+    } else if (attr !== undefined && attr !== null && typeof attr === 'object') {
+        self = attr;
+    }
+
+    return self;
+};
+
+
 function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, shortprefix ,nochange) {
     'use strict';
     var dict;
@@ -57,7 +100,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
     var flagspecial = ['value', 'prefix'];
     var flagwords = ['flagname', 'helpinfo', 'shortflag', 'nargs', 'varname'];
     var cmdwords = ['cmdname', 'function', 'helpinfo'];
-    var otherwords = ['origkey', 'iscmd', 'isflag', 'typename'];
+    var otherwords = ['origkey', 'iscmd', 'isflag', 'typename','attr','longprefix','shortprefix'];
     var formwords = ['longopt', 'shortopt', 'optdest'];
     dict = {};
     self = {};
@@ -180,6 +223,10 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
         dict.isflag = false;
         dict.iscmd = false;
         dict.typename = null;
+        dict.attr = undefined;
+        dict.longprefix = '--';
+        dict.shortprefix = '-';
+        dict.nochange = false;
         return self;
     };
 
