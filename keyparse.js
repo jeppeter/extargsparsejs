@@ -50,7 +50,7 @@ var get_value_type = function (value) {
     return typeof value;
 };
 
-function KeyParser(prefix, key, value, isflag) {
+function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, shortprefix ,nochange) {
     'use strict';
     var dict;
     var self;
@@ -61,6 +61,31 @@ function KeyParser(prefix, key, value, isflag) {
     var formwords = ['longopt', 'shortopt', 'optdest'];
     dict = {};
     self = {};
+
+    if (isflag === undefined) {
+        isflag = false;
+    }
+
+    if (ishelp === undefined) {
+        ishelp = false;
+    }
+
+    if (isjsonfile === undefined) {
+        isjsonfile = false;
+    }
+
+    if (longprefix === undefined) {
+        longprefix = '--';
+    }
+
+
+    if (shortprefix === undefined) {
+        shortprefix = '-';
+    }
+
+    if (nochange === undefined) {
+        nochange = false;
+    }
 
     self.helpexpr = new RegExp('##([^#]+)##$', 'i');
     self.cmdexpr = new RegExp('^([^\\#\\<\\>\\+\\$]+)', 'i');
@@ -148,6 +173,7 @@ function KeyParser(prefix, key, value, isflag) {
         dict.helpinfo = null;
         dict.shortflag = null;
         dict.nargs = null;
+        dict.varname = null;
         dict.cmdname = null;
         dict.function = null;
         dict.origkey = key;
@@ -220,7 +246,14 @@ function KeyParser(prefix, key, value, isflag) {
                     throw new Error(errstr);
                 }
                 dict.nargs = 0;
-            } else if (dict.typename !== 'prefix' && dict.flagname !== '$' && dict.typename !== 'count') {
+            } else if (dict.typename === 'help') {
+                if (dict.nargs !== null && dict.nargs !== 0) {
+                    errstr = util.format('(%s) nargs not 0', dict.origkey);
+                    throw new Error(errstr);
+                }
+                dict.nargs = 0;
+            }
+             else if (dict.typename !== 'prefix' && dict.flagname !== '$' && dict.typename !== 'count') {
                 if (dict.flagname !== '$' && dict.nargs !== 1 && dict.nargs !== null) {
                     errstr = util.format('(%s) should set nargs 1', dict.origkey);
                     throw new Error(errstr);
@@ -253,9 +286,25 @@ function KeyParser(prefix, key, value, isflag) {
                 throw new Error(errstr);
             }
 
-            dict.prefix = dict.cmdname;
+            if (dict.prefix !== null && dict.prefix.length > 0) {
+                dict.prefix += dict.cmdname;
+            }
+
             dict.typename = 'command';
         }
+
+        if (dict.isflag && dict.varname === null && dict.flagname !== null) {
+            if (dict.flagname !== '$') {
+                dict.varname = self.optdest;
+            } else {
+                if (dict.prefix !== null && dict.prefix.length > 0) {
+                    dict.varname = 'subnargs';
+                } else {
+                    dict.varname = 'args';
+                }
+            }
+        }
+
         return self;
     };
 
@@ -313,7 +362,7 @@ function KeyParser(prefix, key, value, isflag) {
             }
         }
 
-        if (dict.prefix.length === 0 && prefix.length > 0) {
+        if (( dict.prefix === null || dict.prefix.length === 0) && prefix.length > 0) {
             dict.prefix = prefix;
         }
     };
@@ -329,7 +378,7 @@ function KeyParser(prefix, key, value, isflag) {
         flagmod = false;
         cmdmod = false;
         dict.origkey = key;
-        if (key.indexOf('$') >= 0) {
+        if (dict.origkey.indexOf('$') >= 0) {
             if (key[0] !== '$') {
                 errstr = util.format('(%s) has $ not at begin', dict.origkey);
                 throw new Error(errstr);
@@ -344,7 +393,7 @@ function KeyParser(prefix, key, value, isflag) {
         }
         flags = null;
 
-        if (isflag) {
+        if (isflag || ishelp || isjsonfile) {
             m = self.flagexpr.exec(dict.origkey);
             if (m !== undefined && m !== null && m.length > 1) {
                 flags = m[1];
@@ -422,18 +471,13 @@ function KeyParser(prefix, key, value, isflag) {
             }
         }
 
-        m = self.funcexpr.exec(dict.origkey);
-        if (m !== undefined && m !== null && m.length > 1) {
-            dict.function = m[1];
-        }
-
         m = self.helpexpr.exec(dict.origkey);
         if (m !== undefined && m !== null && m.length > 1) {
             dict.helpinfo = m[1];
         }
 
         newprefix = '';
-        if (prefix.length > 0) {
+        if (prefix !== null && prefix.length > 0) {
             newprefix += util.format('%s_', prefix);
         }
 
@@ -446,6 +490,8 @@ function KeyParser(prefix, key, value, isflag) {
                 dict.prefix = prefix;
             }
         }
+
+
 
         if (flagmod) {
             dict.isflag = true;
@@ -460,10 +506,28 @@ function KeyParser(prefix, key, value, isflag) {
             dict.isflag = true;
             dict.iscmd = false;
         }
+
+
         dict.value = value;
-        dict.typename = get_value_type(value);
+        if (! ishelp && ! isjsonfile) {
+            dict.typename = get_value_type(value);    
+        } else if (ishelp) {
+            dict.typename = 'help';
+            dict.nargs = 0;
+        } else if (isjsonfile) {
+            dict.typename = 'jsonfile';
+            dict.nargs = 0;
+        }
+
+        if (ishelp && value !== null) {
+            errstr = util.format('help type must be value null');
+            throw new Error(errstr);
+        }
+        
         if (cmdmod && dict.typename !== 'object') {
             /*flag mod is true we give the flag*/
+            flagmod = true;
+            cmdmod = false;
             dict.isflag = true;
             dict.iscmd = false;
             dict.flagname = dict.cmdname;
@@ -494,6 +558,16 @@ function KeyParser(prefix, key, value, isflag) {
         if (dict.isflag && dict.typename === 'object' && dict.flagname !== null) {
             self.set_flag();
         }
+
+        m = self.funcexpr.exec(dict.origkey);
+        if (m !== undefined && m !== null && m.length > 1) {
+            if (flagmod) {
+                dict.varname = m[1];
+            } else {
+                dict.function = m[1];
+            }
+        }
+
         return self.validate();
     };
 
