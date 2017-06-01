@@ -48,6 +48,7 @@ var opt_fail_check = function (t, keycls) {
 
 
 
+
 test('A001', function (t) {
     'use strict';
     var keycls;
@@ -719,6 +720,23 @@ test('A038', function (t) {
     flag1 = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null, false, true);
     flag2 = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null, false, true);
     t.equal(flag1.equals(flag2), true, get_notice(t, 'equals'));
+    t.end();
+});
 
+test('A039', function (t) {
+    'use strict';
+    var keycls;
+    keycls = keyparse.KeyParser('rdep','ip',{'modules' : [],'$<NARGS>' : '+'}, false);
+    t.equal(keycls.iscmd, true, get_notice(t, 'iscmd'));
+    t.equal(keycls.cmdname, 'ip', get_notice(t, 'cmdname'));
+    t.equal(keycls.prefix, 'rdep', get_notice(t, 'prefix'));
+    keycls = keyparse.KeyParser('rdep_ip','modules', [], false);
+    t.equal(keycls.isflag, true, get_notice(t, 'isflag'));
+    t.deepEqual(keycls.value, [], get_notice(t, 'value'));
+    t.equal(keycls.prefix, 'rdep_ip', get_notice(t, 'prefix'));
+    t.equal(keycls.longopt, '--rdep-ip-modules', get_notice(t, 'longopt'));
+    t.equal(keycls.shortopt, null, get_notice(t, 'shortopt'));
+    t.equal(keycls.optdest, 'rdep_ip_modules', get_notice(t, 'optdest'));
+    t.equal(keycls.varname, 'rdep_ip_modules', get_notice(t, 'varname'));
     t.end();
 });
