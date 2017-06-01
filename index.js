@@ -69,6 +69,18 @@ var set_property_value = function (self, name, value) {
     return added;
 };
 
+function ExtArgsOption(setting) {
+    'use strict';
+    var default_value = {
+        prog: process.argv[1],
+        usage: '',
+        description: ''
+    };
+    var self = {};
+
+    return self;
+}
+
 set_property_value(exports, 'COMMAND_SET', 'COMMAND_SET');
 set_property_value(exports, 'SUB_COMMAND_JSON_SET', 'SUB_COMMAND_JSON_SET');
 set_property_value(exports, 'COMMAND_JSON_SET', 'COMMAND_JSON_SET');
