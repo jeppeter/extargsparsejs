@@ -129,13 +129,13 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
         nochange = false;
     }
 
-    self.helpexpr = new RegExp('##([^#]+)##$', 'i');
-    self.cmdexpr = new RegExp('^([^\\#\\<\\>\\+\\$]+)', 'i');
-    self.prefixexpr = new RegExp('\\+([^\\+\\#\\<\\>\\|\\$ \t]+)', 'i');
-    self.funcexpr = new RegExp('<([^\\<\\>\\#\\$\\| \t]+)>', 'i');
-    self.flagexpr = new RegExp('^([^\\<\\>\\#\\+\\$ \t]+)', 'i');
-    self.mustflagexpr = new RegExp('^\\$([^\\$\\+\\#\\<\\>]+)', 'i');
-    self.attrexpr = new RegExp('\!([^\<\>\$!\#\|]+)\!','i');
+    self.helpexpr = new RegExp('##([^#\!]+)##$', 'i');
+    self.cmdexpr = new RegExp('^([^\\#\\<\\>\\+\\$\!]+)', 'i');
+    self.prefixexpr = new RegExp('\\+([^\\+\\#\\<\\>\\|\\$ \t\!]+)', 'i');
+    self.funcexpr = new RegExp('<([^\\<\\>\\#\\$\\| \t\!]+)>', 'i');
+    self.flagexpr = new RegExp('^([^\\<\\>\\#\\+\\$ \t\!]+)', 'i');
+    self.mustflagexpr = new RegExp('^\\$([^\\$\\+\\#\\<\\>\!]+)', 'i');
+    self.attrexpr = new RegExp('\!([^\<\>\$!\#\|\!]+)\!','i');
     dict.longprefix = longprefix;
     dict.shortprefix = shortprefix;
     dict.nochange = nochange;
@@ -153,7 +153,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                 retstr += 'no-';
             }
 
-            if (dict.prefix.length > 0) {
+            if (dict.prefix.length > 0 && dict.typename !== 'help') {
                 retstr += util.format('%s_', dict.prefix);
             }
             retstr += dict.flagname;
@@ -253,7 +253,8 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                 errstr = util.format('(%s) flag typename object', dict.origkey);
                 throw new Error(errstr);
             }
-            if (dict.typename !== get_value_type(dict.value) && dict.typename !== 'count' && dict.typename !== 'args') {
+            if (dict.typename !== get_value_type(dict.value) && dict.typename !== 'count' && dict.typename !== 'args' 
+                && dict.typename !== 'help' && dict.typename !== 'jsonfile') {
                 errstr = util.format('(%s) (%s)not match typename(%s)', dict.origkey, dict.typename, get_value_type(dict.value));
                 throw new Error(errstr);
             }
@@ -475,7 +476,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                 if (flags.indexOf('|') >= 0) {
                     sarr = flags.split('|');
                     if (sarr.length > 2 || sarr[0].length <= 1 || sarr[1].length !== 1) {
-                        errstr = util.format('(%s) invalid flag format', dict.origkey);
+                        errstr = util.format('(%s) invalid flag format sarr [%s]', dict.origkey, sarr);
                         throw new Error(errstr);
                     }
                     dict.flagname = sarr[0];
