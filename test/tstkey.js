@@ -804,3 +804,49 @@ test('A043', function (t) {
     t.equal(keycls.shortopt, '+R', get_notice(t, 'shortopt'));
     t.end();
 });
+
+
+test('A044', function (t) {
+    'use strict';
+    var keycls;
+    keycls = keyparse.KeyParser('','rollback|R## rollback not set ##',true,false,false, false,'++','+');
+    t.equal(keycls.flagname, 'rollback', get_notice(t, 'flagname'));
+    t.equal(keycls.shortflag, 'R', get_notice(t, 'shortflag'));
+    t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
+    t.equal(keycls.typename, 'boolean', get_notice(t, 'typename'));
+    t.equal(keycls.value, true, get_notice(t, 'value'));
+    t.equal(keycls.helpinfo, ' rollback not set ', get_notice(t, 'helpinfo'));
+    t.equal(keycls.nargs, 0, get_notice(t, 'nargs'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    t.equal(keycls.optdest, 'rollback', get_notice(t, 'optdest'));
+    t.equal(keycls.varname, 'rollback', get_notice(t, 'varname'));
+    t.equal(keycls.longopt, '++no-rollback', get_notice(t, 'longopt'));
+    t.equal(keycls.shortopt, '+R', get_notice(t, 'shortopt'));
+    t.equal(keycls.longprefix, '++', get_notice(t, 'longprefix'));
+    t.equal(keycls.shortprefix, '+', get_notice(t, 'shortprefix'));
+    t.end();
+});
+
+test('A045', function (t) {
+    'use strict';
+    var keycls;
+    keycls = keyparse.KeyParser('','crl_CA_compromise',false,false,false, false,'++','+', true);
+    t.equal(keycls.flagname, 'crl_CA_compromise', get_notice(t, 'flagname'));
+    t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
+    t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
+    t.equal(keycls.typename, 'boolean', get_notice(t, 'typename'));
+    t.equal(keycls.value, false, get_notice(t, 'value'));
+    t.equal(keycls.helpinfo, null, get_notice(t, 'helpinfo'));
+    t.equal(keycls.nargs, 0, get_notice(t, 'nargs'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    t.equal(keycls.optdest, 'crl_CA_compromise', get_notice(t, 'optdest'));
+    t.equal(keycls.varname, 'crl_CA_compromise', get_notice(t, 'varname'));
+    t.equal(keycls.longopt, '++crl_CA_compromise', get_notice(t, 'longopt'));
+    t.equal(keycls.shortopt, null, get_notice(t, 'shortopt'));
+    t.equal(keycls.longprefix, '++', get_notice(t, 'longprefix'));
+    t.equal(keycls.shortprefix, '+', get_notice(t, 'shortprefix'));
+    t.end();
+});
+

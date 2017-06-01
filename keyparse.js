@@ -157,8 +157,10 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                 retstr += util.format('%s_', dict.prefix);
             }
             retstr += dict.flagname;
-            retstr = retstr.toLowerCase();
-            retstr = retstr.replace(/_/g, '-');
+            if (! dict.nochange) {
+                retstr = retstr.toLowerCase();
+                retstr = retstr.replace(/_/g, '-');                
+            }
             return retstr;
         } else if (elm === 'shortopt') {
             if (!dict.isflag || !dict.flagname || dict.typename === 'args') {
@@ -181,7 +183,9 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
             }
 
             retstr += dict.flagname;
-            retstr = retstr.toLowerCase();
+            if (! dict.nochange){
+                retstr = retstr.toLowerCase();    
+            }            
             retstr = retstr.replace(/-/g, '_');
             return retstr;
         } else if (elm === 'needarg') {
@@ -487,6 +491,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
         dict.origkey = key;
         dict.longprefix = longprefix;
         dict.shortprefix = shortprefix;
+        dict.nochange = nochange;
         if (dict.origkey.indexOf('$') >= 0) {
             if (key[0] !== '$') {
                 errstr = util.format('(%s) has $ not at begin', dict.origkey);
