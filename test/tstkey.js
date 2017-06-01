@@ -753,3 +753,54 @@ test('A040', function (t) {
     t.equal(flag1.equals(flag2), true, get_notice(t, 'equals'));
     t.end();
 });
+
+test('A041', function (t) {
+    'use strict';
+    var keycls;
+    keycls = keyparse.KeyParser('prefix','$json',{"nargs":1,"attr":{"func":"args_opt_func","wait": "cc"}}, false);
+    t.equal(keycls.prefix, 'prefix', get_notice(t, 'prefix'));
+    t.equal(keycls.isflag, true, get_notice(t, 'isflag'));
+    t.equal(keycls.attr.func, 'args_opt_func', get_notice(t, 'attr.func'));
+    t.equal(keycls.attr.wait, 'cc', get_notice(t, 'attr.wait'));
+    t.equal(keycls.flagname, 'json', get_notice(t, 'flagname'));
+    t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
+    t.equal(keycls.longopt, '--prefix-json', get_notice(t, 'longopt'));
+    t.equal(keycls.shortopt, null,  get_notice(t, 'shortopt'));
+    t.equal(keycls.optdest, 'prefix_json', get_notice(t, 'optdest'));
+    t.equal(keycls.varname, 'prefix_json', get_notice(t, 'varname'));
+    t.end();
+});
+
+test('A042', function (t) {
+    'use strict';
+    var keycls;
+    keycls = keyparse.KeyParser('','main',{}, false);
+    t.equal(keycls.prefix, 'main', get_notice(t, 'prefix'));
+    t.equal(keycls.isflag, false, get_notice(t, 'isflag'));
+    t.equal(keycls.iscmd, true, get_notice(t, 'iscmd'));
+    t.equal(keycls.attr, undefined, get_notice(t, 'attr'));
+    t.equal(keycls.cmdname, 'main', get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    opt_fail_check(t, keycls);
+    t.end();
+});
+
+test('A043', function (t) {
+    'use strict';
+    var keycls;
+    keycls = keyparse.KeyParser('','rollback|R## rollback not set ##',true,false,false, false,'++','+');
+    t.equal(keycls.flagname, 'rollback', get_notice(t, 'flagname'));
+    t.equal(keycls.shortflag, 'R', get_notice(t, 'shortflag'));
+    t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
+    t.equal(keycls.typename, 'boolean', get_notice(t, 'typename'));
+    t.equal(keycls.value, true, get_notice(t, 'value'));
+    t.equal(keycls.helpinfo, ' rollback not set ', get_notice(t, 'helpinfo'));
+    t.equal(keycls.nargs, 0, get_notice(t, 'nargs'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    t.equal(keycls.optdest, 'rollback', get_notice(t, 'optdest'));
+    t.equal(keycls.varname, 'rollback', get_notice(t, 'varname'));
+    t.equal(keycls.longopt, '++no-rollback', get_notice(t, 'longopt'));
+    t.equal(keycls.shortopt, '+R', get_notice(t, 'shortopt'));
+    t.end();
+});

@@ -148,7 +148,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                 errstr = util.format('can not set (%s) longopt', dict.origkey);
                 throw new Error(errstr);
             }
-            retstr += '--';
+            retstr += dict.longprefix;
             if (dict.typename === 'boolean' && dict.value) {
                 retstr += 'no-';
             }
@@ -168,7 +168,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
             if (!dict.shortflag) {
                 return null;
             }
-            retstr += '-';
+            retstr += dict.shortprefix;
             retstr += dict.shortflag;
             return retstr;
         } else if (elm === 'optdest') {
@@ -391,8 +391,8 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                 throw new Error(errstr);
             }
 
-            if (prefix !== null && prefix.length > 0) {
-                dict.prefix = prefix;
+            if ( dict.prefix.length === 0) {
+                dict.prefix += dict.cmdname;
             }
 
             dict.typename = 'command';
@@ -485,6 +485,8 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
         flagmod = false;
         cmdmod = false;
         dict.origkey = key;
+        dict.longprefix = longprefix;
+        dict.shortprefix = shortprefix;
         if (dict.origkey.indexOf('$') >= 0) {
             if (key[0] !== '$') {
                 errstr = util.format('(%s) has $ not at begin', dict.origkey);
