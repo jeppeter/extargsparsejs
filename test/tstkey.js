@@ -110,7 +110,7 @@ test('A004', function (t) {
     t.equal(keycls.cmdname, 'flag', get_notice(t, 'cmdname'));
     t.equal(keycls.function, 'flag.main', get_notice(t, 'function'));
     t.equal(keycls.typename, 'command', get_notice(t, 'typename'));
-    t.equal(keycls.prefix, 'flag', get_notice(t, 'prefix'));
+    t.equal(keycls.prefix, 'newtype', get_notice(t, 'prefix'));
     t.equal(keycls.helpinfo, 'help for flag', get_notice(t, 'helpinfo'));
     t.equal(keycls.flagname, null, get_notice(t, 'flagname'));
     t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
@@ -124,16 +124,21 @@ test('A004', function (t) {
 test('A005', function (t) {
     'use strict';
     var keycls;
-    var ok = false;
-    try {
-
-        keycls = keyparse.KeyParser('', 'flag<flag.main>##help for flag##', '', true);
-    } catch (e) {
-        keycls = e;
-        keycls = keycls;
-        ok = true;
-    }
-    t.equal(ok, true, get_notice(t, 'true no ok'));
+    keycls = keyparse.KeyParser('', 'flag<flag.main>##help for flag##', '', true);
+    t.equal(keycls.cmdname, null , get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null , get_notice(t, 'function'));
+    t.equal(keycls.typename, 'string', get_notice(t, 'typename'));
+    t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
+    t.equal(keycls.flagname, 'flag', get_notice(t, 'flagname'));
+    t.equal(keycls.helpinfo, 'help for flag', get_notice(t, 'helpinfo'));
+    t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
+    t.equal(keycls.value, '', get_notice(t, 'value'));
+    t.equal(keycls.isflag, true, get_notice(t, 'isflag'));
+    t.equal(keycls.iscmd, false, get_notice(t, 'iscmd'));
+    t.equal(keycls.longopt, '--flag', get_notice(t, 'longopt'));
+    t.equal(keycls.shortopt, null, get_notice(t, 'shortopt'));
+    t.equal(keycls.optdest, 'flag', get_notice(t, 'optdest'));
+    t.equal(keycls.varname, 'flag.main', get_notice(t, 'varname'));
     t.end();
 });
 
@@ -144,7 +149,7 @@ test('A006', function (t) {
         new: false
     }, false);
     t.equal(keycls.cmdname, 'flag', get_notice(t, 'cmdname'));
-    t.equal(keycls.prefix, 'flag', get_notice(t, 'prefix'));
+    t.equal(keycls.prefix, 'type', get_notice(t, 'prefix'));
     t.equal(keycls.function, 'flag.main', get_notice(t, 'function'));
     t.equal(keycls.helpinfo, null, get_notice(t, 'helpinfo'));
     t.equal(keycls.flagname, null, get_notice(t, 'flagname'));
@@ -231,27 +236,43 @@ test('A011', function (t) {
 
 test('A012', function (t) {
     'use strict';
-    var ok = false;
-    try {
-        keyparse.KeyParser('', '$flag|f<flag.main>', {}, false);
-    } catch (e) {
-        ok = e;
-        ok = true;
-    }
-    t.equal(ok, true, get_notice(t, 'not flag with function'));
+    var keycls ;
+    keycls = keyparse.KeyParser('', '$flag|f<flag.main>', {}, false);
+    t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
+    t.equal(keycls.value, null, get_notice(t, 'value'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.shortflag, 'f', get_notice(t, 'shortflag'));
+    t.equal(keycls.flagname, 'flag', get_notice(t, 'flagname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    t.equal(keycls.helpinfo, null, get_notice(t, 'helpinfo'));
+    t.equal(keycls.isflag, true, get_notice(t, 'isflag'));
+    t.equal(keycls.iscmd, false, get_notice(t, 'iscmd'));
+    t.equal(keycls.typename, 'string', get_notice(t, 'typename'));
+    t.equal(keycls.varname, 'flag.main', get_notice(t, 'varname'));
+    t.equal(keycls.longopt, '--flag', get_notice(t, 'longopt'));
+    t.equal(keycls.shortopt, '-f', get_notice(t, 'shortopt'));
+    t.equal(keycls.optdest, 'flag', get_notice(t, 'optdest'));
     t.end();
 });
 
 test('A013', function (t) {
     'use strict';
-    var ok = false;
-    try {
-        keyparse.KeyParser('', '$flag|f+cc<flag.main>', null, false);
-    } catch (e) {
-        ok = e;
-        ok = true;
-    }
-    t.equal(ok, true, get_notice(t, 'flag without prefix'));
+    var keycls;
+    keycls = keyparse.KeyParser('', '$flag|f+cc<flag.main>', null, false);
+    t.equal(keycls.prefix, 'cc', get_notice(t, 'prefix'));
+    t.equal(keycls.value, null, get_notice(t, 'value'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.shortflag, 'f', get_notice(t, 'shortflag'));
+    t.equal(keycls.flagname, 'flag', get_notice(t, 'flagname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    t.equal(keycls.helpinfo, null, get_notice(t, 'helpinfo'));
+    t.equal(keycls.isflag, true, get_notice(t, 'isflag'));
+    t.equal(keycls.iscmd, false, get_notice(t, 'iscmd'));
+    t.equal(keycls.typename, 'string', get_notice(t, 'typename'));
+    t.equal(keycls.varname, 'flag.main', get_notice(t, 'varname'));
+    t.equal(keycls.longopt, '--cc-flag', get_notice(t, 'longopt'));
+    t.equal(keycls.shortopt, '-f', get_notice(t, 'shortopt'));
+    t.equal(keycls.optdest, 'cc_flag', get_notice(t, 'optdest'));
     t.end();
 });
 
@@ -330,9 +351,10 @@ test('A018', function (t) {
     var keycls;
     keycls = keyparse.KeyParser('', 'flag+app<flag.main>## flag help ##', {}, false);
     t.equal(keycls.flagname, null, get_notice(t, 'flagname'));
-    t.equal(keycls.prefix, 'flag', get_notice(t, 'prefix'));
+    t.equal(keycls.prefix, 'app', get_notice(t, 'prefix'));
     t.equal(keycls.cmdname, 'flag', get_notice(t, 'cmdname'));
     t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
+    t.equal(keycls.varname, null, get_notice(t, 'varname'));
     t.equal(keycls.typename, 'command', get_notice(t, 'command'));
     t.deepEqual(keycls.value, {}, get_notice(t, 'value'));
     t.equal(keycls.function, 'flag.main', get_notice(t, 'function'));
@@ -581,6 +603,61 @@ test('A032', function (t) {
     t.equal(keycls.cmdname, null, get_notice(t,'cmdname'));
     t.equal(keycls.function, null, get_notice(t,'function'));
     t.equal(keycls.varname, 'numargs', get_notice(t,'varname'));
+    opt_fail_check(t, keycls);
+    t.end();
+});
+
+test('A033', function (t) {
+    'use strict';
+    var keycls;
+    keycls = keyparse.KeyParser('','$','+',false);
+    t.equal(keycls.flagname,'$',get_notice(t,'flagname'));
+    t.equal(keycls.prefix, '', get_notice(t,'prefix'));
+    t.equal(keycls.value, null, get_notice(t,'value'));
+    t.equal(keycls.typename, 'args', get_notice(t,'typename'));
+    t.equal(keycls.helpinfo, null, get_notice(t,'helpinfo'));
+    t.equal(keycls.nargs,'+',get_notice(t,'nargs'));
+    t.equal(keycls.shortflag, null, get_notice(t,'shortflag'));
+    t.equal(keycls.cmdname, null, get_notice(t,'cmdname'));
+    t.equal(keycls.function, null, get_notice(t,'function'));
+    t.equal(keycls.varname, 'args', get_notice(t,'varname'));
+    opt_fail_check(t, keycls);
+    t.end();
+});
+
+test('A034', function (t) {
+    'use strict';
+    var keycls;
+    keycls = keyparse.KeyParser('prefix','$','+',false);
+    t.equal(keycls.flagname,'$',get_notice(t,'flagname'));
+    t.equal(keycls.prefix, 'prefix', get_notice(t,'prefix'));
+    t.equal(keycls.value, null, get_notice(t,'value'));
+    t.equal(keycls.typename, 'args', get_notice(t,'typename'));
+    t.equal(keycls.helpinfo, null, get_notice(t,'helpinfo'));
+    t.equal(keycls.nargs,'+',get_notice(t,'nargs'));
+    t.equal(keycls.shortflag, null, get_notice(t,'shortflag'));
+    t.equal(keycls.cmdname, null, get_notice(t,'cmdname'));
+    t.equal(keycls.function, null, get_notice(t,'function'));
+    t.equal(keycls.varname, 'subnargs', get_notice(t,'varname'));
+    opt_fail_check(t, keycls);
+    t.end();
+});
+
+test('A035', function (t) {
+    'use strict';
+    var keycls;
+    keycls = keyparse.KeyParser('prefix','$<newargs>','+',false);
+    t.equal(keycls.flagname,'$',get_notice(t,'flagname'));
+    t.equal(keycls.prefix, 'prefix', get_notice(t,'prefix'));
+    t.equal(keycls.value, null, get_notice(t,'value'));
+    t.equal(keycls.typename, 'args', get_notice(t,'typename'));
+    t.equal(keycls.helpinfo, null, get_notice(t,'helpinfo'));
+    t.equal(keycls.nargs,'+',get_notice(t,'nargs'));
+    t.equal(keycls.shortflag, null, get_notice(t,'shortflag'));
+    t.equal(keycls.cmdname, null, get_notice(t,'cmdname'));
+    t.equal(keycls.function, null, get_notice(t,'function'));
+    t.equal(keycls.varname, 'newargs', get_notice(t,'varname'));
+    t.equal(keycls.attr, undefined, get_notice(t,'attr'));
     opt_fail_check(t, keycls);
     t.end();
 });

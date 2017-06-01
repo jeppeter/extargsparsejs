@@ -1,6 +1,5 @@
 var util = require('util');
 var assert = require('assert');
-//var tracelog = require('../tracelog');
 
 var set_words_access = function (words, self) {
     'use strict';
@@ -136,6 +135,10 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
     self.funcexpr = new RegExp('<([^\\<\\>\\#\\$\\| \t]+)>', 'i');
     self.flagexpr = new RegExp('^([^\\<\\>\\#\\+\\$ \t]+)', 'i');
     self.mustflagexpr = new RegExp('^\\$([^\\$\\+\\#\\<\\>]+)', 'i');
+    self.attrexpr = new RegExp('\!([^\<\>\$!\#\|]+)\!','i');
+    dict.longprefix = longprefix;
+    dict.shortprefix = shortprefix;
+    dict.nochange = nochange;
 
     self.form_words = function (elm) {
         var errstr;
@@ -157,8 +160,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
             retstr = retstr.toLowerCase();
             retstr = retstr.replace(/_/g, '-');
             return retstr;
-        }
-        if (elm === 'shortopt') {
+        } else if (elm === 'shortopt') {
             if (!dict.isflag || !dict.flagname || dict.typename === 'args') {
                 errstr = util.format('can not set (%s) shortopt', dict.origkey);
                 throw new Error(errstr);
@@ -169,8 +171,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
             retstr += '-';
             retstr += dict.shortflag;
             return retstr;
-        }
-        if (elm === 'optdest') {
+        } else if (elm === 'optdest') {
             if (!dict.isflag || !dict.flagname || dict.typename === 'args') {
                 errstr = util.format('can not set (%s) shortopt', dict.origkey);
                 throw new Error(errstr);
@@ -183,6 +184,16 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
             retstr = retstr.toLowerCase();
             retstr = retstr.replace(/-/g, '_');
             return retstr;
+        } else if (elm === 'needarg') {
+            if (!dict.isflag) {
+                return 0;
+            }
+
+            if (dict.typename === 'int' || dict.typename === 'object' || dict.typename === 'jsonfile' 
+                 || dict.typename === 'float' || dict.typename === 'string' || dict.typename === 'array') {
+                return 1;
+            }
+            return 0;
         }
         errstr = util.format('unknown word (%s)', elm);
         throw new Error(errstr);
@@ -220,13 +231,13 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
         dict.cmdname = null;
         dict.function = null;
         dict.origkey = key;
-        dict.isflag = false;
         dict.iscmd = false;
+        dict.isflag = false;
         dict.typename = null;
         dict.attr = undefined;
+        dict.nochange = false;
         dict.longprefix = '--';
         dict.shortprefix = '-';
-        dict.nochange = false;
         return self;
     };
 
@@ -333,8 +344,8 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                 throw new Error(errstr);
             }
 
-            if (dict.prefix !== null && dict.prefix.length > 0) {
-                dict.prefix += dict.cmdname;
+            if (prefix !== null && prefix.length > 0) {
+                dict.prefix = prefix;
             }
 
             dict.typename = 'command';
