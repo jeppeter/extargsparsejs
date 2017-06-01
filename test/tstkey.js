@@ -661,3 +661,26 @@ test('A035', function (t) {
     opt_fail_check(t, keycls);
     t.end();
 });
+
+test('A036', function (t) {
+    'use strict';
+    var keycls;
+    var attr;
+    keycls = keyparse.KeyParser('prefix','$<newargs>!func=args_opt_func;wait=cc!','+',false);
+    t.equal(keycls.flagname, '$', get_notice(t, 'flagname'));
+    t.equal(keycls.prefix, 'prefix', get_notice(t, 'prefix'));
+    t.equal(keycls.value, null, get_notice(t, 'value'));
+    t.equal(keycls.typename, 'args', get_notice(t, 'typename'));
+    t.equal(keycls.helpinfo, null, get_notice(t, 'helpinfo'));
+    t.equal(keycls.nargs, '+', get_notice(t, 'nargs'));
+    t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    t.equal(keycls.varname, 'newargs', get_notice(t, 'varname'));
+    attr = keycls.attr;
+    t.notEqual(attr, undefined, get_notice(t, 'attr'));
+    t.equal(attr.func, 'args_opt_func', get_notice(t, 'attr.func'));
+    t.equal(attr.wait, 'cc', get_notice(t, 'attr.wait'));
+    opt_fail_check(t, keycls);
+    t.end();
+});

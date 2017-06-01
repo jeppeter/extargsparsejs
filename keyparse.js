@@ -417,6 +417,8 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                     dict.value = value.value;
                     dict.typename = get_value_type(value.value);
                 }
+            }  else if (k === 'attr') {
+                dict.attr = KeyAttr(value[k]);
             }
         }
 
@@ -615,6 +617,11 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
 
         if (dict.isflag && dict.typename === 'object' && dict.flagname !== null) {
             self.set_flag();
+        }
+
+        m = self.attrexpr.exec(dict.origkey);
+        if (m !== undefined && m !== null && m.length > 1) {
+            dict.attr = KeyAttr(m[1]);
         }
 
         m = self.funcexpr.exec(dict.origkey);
