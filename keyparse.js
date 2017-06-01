@@ -358,8 +358,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                     throw new Error(errstr);
                 }
                 dict.nargs = 0;
-            }
-             else if (dict.typename !== 'prefix' && dict.flagname !== '$' && dict.typename !== 'count') {
+            } else if (dict.typename !== 'prefix' && dict.flagname !== '$' && dict.typename !== 'count') {
                 if (dict.flagname !== '$' && dict.nargs !== 1 && dict.nargs !== null) {
                     errstr = util.format('(%s) should set nargs 1', dict.origkey);
                     throw new Error(errstr);
@@ -624,7 +623,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
             dict.nargs = 0;
         } else if (isjsonfile) {
             dict.typename = 'jsonfile';
-            dict.nargs = 0;
+            dict.nargs = 1;
         }
 
         if (ishelp && value !== null) {

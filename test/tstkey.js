@@ -740,3 +740,16 @@ test('A039', function (t) {
     t.equal(keycls.varname, 'rdep_ip_modules', get_notice(t, 'varname'));
     t.end();
 });
+
+test('A040', function (t) {
+    'use strict';
+    var flag1;
+    var flag2;
+    flag1 = keyparse.KeyParser('prefix','json!func=args_opt_func;wait=cc!', null, false, false, true);
+    flag2 = keyparse.KeyParser('prefix','json!func=args_opt_func;wait=cc!', null, false);
+    t.notEqual(flag1.equals(flag2), true, get_notice(t, 'not equals'));
+    flag1 = keyparse.KeyParser('prefix','json!func=args_opt_func;wait=cc!', null, false, false, true);
+    flag2 = keyparse.KeyParser('prefix','json!func=args_opt_func;wait=cc!', null, false, false, true);
+    t.equal(flag1.equals(flag2), true, get_notice(t, 'equals'));
+    t.end();
+});
