@@ -708,3 +708,17 @@ test('A037', function (t) {
     t.equal(keycls.shortopt, '-h', get_notice(t, 'shortopt'));
     t.end();
 });
+
+test('A038', function (t) {
+    'use strict';
+    var flag1;
+    var flag2;
+    flag1 = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null, false, true);
+    flag2 = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null, false);
+    t.notEqual(flag1.equals(flag2), true, get_notice(t, 'not equals'));
+    flag1 = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null, false, true);
+    flag2 = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null, false, true);
+    t.equal(flag1.equals(flag2), true, get_notice(t, 'equals'));
+
+    t.end();
+});

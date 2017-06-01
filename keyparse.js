@@ -199,6 +199,53 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
         throw new Error(errstr);
     };
 
+    self.equal_name = function (other, name) {
+        var odict;
+        if (flagspecial.indexOf(name) >= 0 ||
+            flagwords.indexOf(name) >= 0 ||
+            cmdwords.indexOf(name) >= 0 ||
+            otherwords.indexOf(name) >= 0 ||
+            formwords.indexOf(name) >= 0) {
+            odict = other.__innerdict;
+            if (dict[name] === odict[name]) {
+                return true;
+            }
+            if (dict[name] === undefined && odict[name] === undefined ) {
+                return true;
+            }
+            if (dict[name] === null && odict[name] === null) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    self.equals = function (other) {
+        if (! self.equal_name(other, 'origkey')) {
+            return false;
+        }
+        if (! self.equal_name(other, 'prefix')) {
+            return false;
+        }
+
+        if (! self.equal_name(other, 'typename')) {
+            return false;
+        }
+
+        if (! self.equal_name(other, 'value')) {
+            return false;
+        }
+
+        if (! self.equal_name(other, 'longopt')) {
+            return false;
+        }
+
+        if (! self.equal_name(other, 'shortopt')) {
+            return false;
+        }
+        return true;
+    };
+
     self.get_word = function (elm) {
         var errstr;
         if (flagspecial.indexOf(elm) >= 0 || flagwords.indexOf(elm) >= 0 || cmdwords.indexOf(elm) >= 0 || otherwords.indexOf(elm) >= 0) {
@@ -640,6 +687,8 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
     self.init_fn = function () {
         return self.reset_value().parse();
     };
+
+    self.__innerdict = dict;
 
     return self.init_fn();
 }
