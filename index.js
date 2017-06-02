@@ -1,6 +1,7 @@
 var keyparse = require('./keyparse');
 var util = require('util');
 var fs = require('fs');
+var assert = require('assert');
 
 var call_args_function = function (funcname, args, context) {
     'use strict';
@@ -69,17 +70,152 @@ var set_property_value = function (self, name, value) {
     return added;
 };
 
+var set_property_max = function (self, name,dictobj) {
+    'use strict';
+    var hasproperties;
+    var added = 0;
+    hasproperties = Object.getOwnPropertyNames(self);
+    if (hasproperties.indexOf(name) < 0) {
+        Object.defineProperty(self, name, {
+            enumerable: true,
+            get: function () {
+                return dictobj[name];
+            },
+            set: function (v) {
+                if (dictobj[name] < v) {
+                    dictobj[name] = v;
+                }
+            }
+        });
+        added = 1;
+    }
+    return added;
+};
+
+
+
+var setting_object = function (self,setting) {
+    Object.keys(setting).forEach(function (k) {
+        if (setting[k] !== undefined) {
+            self[k] = setting[k];    
+        }        
+    });
+    return self;
+};
+
+var setting_string = function (self,setting) {
+    var setobj = {};
+    try{
+        setobj = JSON.parse(setting);
+        self = setting_object(self,setobj);
+    }
+    catch (e) {
+        console.error('[%s] parse error[%s]', setting, e);
+    }
+    return self;
+};
+
 function ExtArgsOption(setting) {
     'use strict';
     var default_value = {
         prog: process.argv[1],
         usage: '',
-        description: ''
+        description: '',
+        epilog : '',
+        version : '0.0.1',
+        errorhandler : 'exit',
+        helphandler : null,
+        longprefix : '--',
+        shortprefix : '-',
+        nohelpoption : false,
+        nojsonoption : false,
+        helplong : 'help',
+        helpshort : 'h',
+        jsonlong : 'json',
+        cmdprefixadded : true,
+        parseall : true,
+        screenwidth : 80,
+        flagnochange : false
     };
     var self = {};
 
+    self = setting_object(self,default_value);
+    if (typeof setting === 'object') {
+        self = setting_object(self, setting);
+    } else if (typeof setting === 'string') {
+        self = setting_string(self, setting);
+    }
     return self;
 }
+
+function HelpSize() {
+    var self = {};
+    var dict = {};
+    dict.optnamesize = 0;
+    dict.optexprsize = 0;
+    dict.opthelpsize = 0;
+    dict.cmdnamesize = 0;
+    dict.cmdhelpsize = 0;
+
+    set_property_max(self,'optnamesize',dict);
+    set_property_max(self,'optexprsize',dict);
+    set_property_max(self,'opthelpsize',dict);
+    set_property_max(self,'cmdnamesize',dict);
+    set_property_max(self,'cmdhelpsize',dict);
+
+    self.format() = function () {
+        var str = '';
+        str += '{';
+        Object.keys(dict).forEach(function(k) {
+            if (str.length > 1) {
+                str += ',';
+            }
+            str += util.format('%s=%s', k, dict[k]);
+        });
+        str += '}';
+        return str;
+    };
+
+    return self;
+}
+
+var not_null = function (v) {
+    if (v === undefined || v === null) {
+        return false;
+    }
+    return true;
+};
+
+function ParserCompat(keycls,opt) {
+    'use strict';
+    var self = {};
+    if (keycls === undefined) {
+        keycls = null;
+    }
+    if (opt === undefined) {
+        opt = null;
+    }
+
+    if (keycls !== null) {
+        assert.equal(keycls.iscmd, true, 'keycls must be cmd');
+        self.keycls = keycls;
+        self.cmdname = keycls.cmdname;
+        self.cmdopts = [];
+        self.subcommands = [];
+        self.helpinfo = util.format('%s handler', self.cmdname);
+        if (not_null(keycls.helpinfo)) {
+            self.helpinfo = keycls.helpinfo;
+        }
+        self.callfunction = null;
+        if (not_null(keycls.function)) {
+            self.callfunction = keycls.function;
+        }
+    } else {
+        self.keycls = keyparse.KeyParser('','main',{}, false);
+        self.cmdname = '';
+    }
+    return self;
+};
 
 set_property_value(exports, 'COMMAND_SET', 'COMMAND_SET');
 set_property_value(exports, 'SUB_COMMAND_JSON_SET', 'SUB_COMMAND_JSON_SET');
