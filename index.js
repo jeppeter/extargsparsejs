@@ -3,8 +3,7 @@ var util = require('util');
 var fs = require('fs');
 var assert = require('assert');
 
-var call_args_function = function (funcname, args, context) {
-    'use strict';
+var call_args_function = function (funcname, context, ...args) {
     var pkgname;
     var fname;
     var reg;
@@ -42,8 +41,7 @@ var call_args_function = function (funcname, args, context) {
         return args;
     }
 
-    Function.prototype.call.call(reqpkg[fname], context, args);
-    return args;
+    return Function.prototype.call.call(reqpkg[fname], context , ...args);    
 };
 
 
@@ -213,7 +211,118 @@ function ParserCompat(keycls,opt) {
     } else {
         self.keycls = keyparse.KeyParser('','main',{}, false);
         self.cmdname = '';
+        self.cmdopts = [];
+        self.subcommands = [];
+        self.helpinfo = null;
+        self.callfunction = null;
     }
+
+    self.screenwidth = 80;
+    if (opt !== null && not_null(opt.screenwidth)) {
+        self.screenwidth = opt.screenwidth;
+    }
+    if (self.screenwidth < 40) {
+        self.screenwidth = 40;
+    }
+    self.epilog = null;
+    self.description = null;
+    self.prog = null;
+    self.usage = null;
+    self.version = null;
+
+    self.__get_cmd_cmdname = function (cls) {
+        var retstr = '';
+        if (not_null(cls.cmdname)) {
+            retstr += util.format('[%s]', cls.cmdname);
+        }
+        return retstr;
+    };
+
+    self.__get_cmd_helpinfo = function (cls) {
+        var retstr = '';
+        if (not_null(cls.helpinfo)) {
+            retstr += cls.helpinfo;
+        }
+        return retstr;
+    };
+
+    self.__get_opt_optname = function (optcmd) {
+        var optname = '';
+        optname = optcmd.longopt;
+        if (not_null(optcmd.shortopt)) {
+            optname += util.format('|%s', optcmd.shortopt);
+        }
+        return optname;
+    };
+
+    self.__get_opt_expr = function (optcmd) {
+        var optexpr = '';
+        if (optcmd.typename !== 'boolean' && 
+            optcmd.typename !== 'args' && 
+            optcmd.typename !== 'object' &&
+            optcmd.typename !== 'help') {
+            optexpr += optcmd.varname;
+            optexpr = optexpr.replace(/-/g, '_');
+        }
+        return optexpr;
+    };
+
+    self.__get_opt_helpinfo = function (optcmd) {
+        var opthelp = '';
+        if (not_null(optcmd.attr) && 
+            not_null(optcmd.attr.opthelp)) {
+            opthelp += call_args_function(optcmd.attr.opthelp, null, optcmd);
+        } else {
+            if (optcmd.typename === 'boolean') {
+                if (optcmd.value) {
+                    opthelp += util.format('%s set false default(True)', optcmd.optdest);
+                } else {
+                    opthelp += util.format('%s set true default(False)', optcmd.optdest);
+                }
+            } else if (optcmd.typename === 'string' && optcmd.value === '+' || 
+                       optcmd.typename === 'count') {
+                if (optcmd.isflag) {
+                    opthelp += util.format('%s inc', optcmd.optdest);
+                } else {
+                    var errstr;
+                    errstr = util.format('cmd(%s) can not set value(%s)', optcmd.cmdname, optcmd.value);
+                    throw new Error(errstr);
+                }
+            } else if (optcmd.typename === 'help') {
+                opthelp += 'to display this help information';
+            } else {
+                if (optcmd.isflag) {
+                    opthelp += util.format('%s set default(%s)', optcmd.optdest, optcmd.value);
+                } else {
+                    opthelp += util.format('%s command exec', optcmd.cmdname);
+                }
+            }
+
+            if (not_null(optcmd.helpinfo)) {
+                opthelp = optcmd.helpinfo;
+            }
+        }
+        return opthelp;
+    };
+
+    self.get_help_size = function (helpsize, recursive) {
+        var cmdname ;
+        var cmdhelp ;
+        if (recursive === undefined) {
+            recursive = 0;
+        }
+
+        cmdname = self.__get_cmd_cmdname(self);
+        cmdhelp = self.__get_cmd_helpinfo(self);
+        helpsize.cmdnamesize = len(cmdname);
+        helpsize.cmdhelpsize = len(cmdhelp);
+        self.cmdopts.forEach( function (cmdopt) {
+            if (cmdopt.typename !== 'args') {
+
+            }
+        });
+    };
+
     return self;
 };
 
@@ -1254,7 +1363,7 @@ function NewExtArgsParse(option) {
             if (curparser) {
                 keycls = curparser.cmdkeycls;
                 if (keycls.function !== null) {
-                    call_args_function(keycls.function, self.args, context);
+                    call_args_function(keycls.function, context, self.args);
                 }
             }
         }
