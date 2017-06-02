@@ -113,6 +113,18 @@ var setting_string = function (self,setting) {
     return self;
 };
 
+var format_length = function (s, len) {
+    var rets = s;
+    var idx;
+    if (rets.length < len) {
+        for(idx=0;rets.length < len;idx+=1) {
+            rets += ' ';
+        }
+    }
+    return rets;
+};
+
+
 function ExtArgsOption(setting) {
     'use strict';
     var default_value = {
@@ -346,12 +358,44 @@ function ParserCompat(keycls,opt) {
         return helpsize;
     };
 
+    self.__get_indent_string = function (s,indentsize,maxsize) {
+        var rets = '';
+        var curs = '';
+        var idx =0;
+        var jdx = 0;
+        for (jdx=0;jdx<indentsize;jdx+=1) {
+            curs += ' ';
+        }
+        for (idx = 0;idx < s.length ;idx+=1) {
+            var c = s[idx];
+            if ((c === ' ' || c === '\t') && 
+                curs.length >= maxsize) {
+                rets += curs + '\n';
+                curs = '';
+                for (jdx =0 ;jdx < indentsize;jdx += 1) {
+                    curs += ' ';
+                }
+                continue;
+            }
+            curs += c;
+        }
+        if (curs.length > 0) {
+            if (curs.replace(/[\s]+$/g,'').length > 0) {
+                rets += curs + '\n';
+            }
+        }
+        return rets;
+    };
+
+
     self.get_help_info = function (helpsize, parentcmds) {
         var retstr = '';
         var rootcmds;
         var optname;
         var optexpr;
         var opthelp;
+        var cmdname;
+        var cmdhelp;
         if (! not_null(helpsize)) {
             helpsize = null;
         }
@@ -427,8 +471,36 @@ function ParserCompat(keycls,opt) {
                     optexpr = self.__get_opt_expr(curopt);
                     opthelp = self.__get_opt_helpinfo(curopt);
                     curstr += util.format('    ');
-                    curstr += util.format('%-*s %-*s %-*s\n', helpsize.optnamesize, )
+                    curstr += util.format('%s %s %s\n', format_length(optname, helpsize.optnamesize), 
+                        format_length(optexpr,helpsize.optexprsize),
+                        format_length(opthelp,helpsize.opthelpsize));
+                    if (curstr.length < self.screenwidth) {
+                        retstr += curstr;
+                    } else {
+                        curstr = ''
+                        curstr += util.format('    ');
+                        curstr += util.format('%s %s', format_length(optname, helpsize.optnamesize) ,
+                            format_length(optexpr, helpsize.optexprsize));
+                        retstr += curstr + '\n';
+                        if (self.screenwidth >= 60) {
+                            retstr += self.__get_indent_string(opthelp, 20, self.screenwidth);
+                        } else {
+                            retstr += self.__get_indent_string(opthelp, 15, self.screenwidth);
+                        }
+                    }
                 }
+            });
+        }
+
+        if (self.subcommands.length > 0) {
+            retstr += '[SUBCOMMANDS]\n';
+            self.subcommands.forEach(function(curcmd) {
+                cmdname = self.__get_cmd_cmdname(curcmd);
+                cmdhelp = self.__get_cmd_helpinfo(curcmd);
+                curstr = '';
+                curstr += util.format(' ');
+                curstr += util.format('%s %s', format_length(cmdname,helpsize.cmdnamesize),
+                        format_length(cmdhelp, helpsize.cmdhelpsize));
             });
         }
         return retstr;
