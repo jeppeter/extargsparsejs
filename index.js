@@ -308,6 +308,11 @@ function ParserCompat(keycls,opt) {
     self.get_help_size = function (helpsize, recursive) {
         var cmdname ;
         var cmdhelp ;
+
+        if (! not_null(helpsize)) {
+            helpsize = HelpSize();
+        }
+
         if (recursive === undefined) {
             recursive = 0;
         }
@@ -318,9 +323,115 @@ function ParserCompat(keycls,opt) {
         helpsize.cmdhelpsize = len(cmdhelp);
         self.cmdopts.forEach( function (cmdopt) {
             if (cmdopt.typename !== 'args') {
-
+                helpsize.optnamesize = len(self.__get_opt_optname(cmdopt));
+                helpsize.optexprsize = len(self.__get_opt_expr(cmdopt));
+                helpsize.opthelpsize = len(self.__get_opt_helpinfo(cmdopt));
             }
         });
+
+        if (recursive) {
+            self.subcommands.forEach( function (curcmd) {
+                if (recursive > 0) {
+                    helpsize = curcmd.get_help_size(helpsize, (recursive - 1));
+                } else {
+                    helpsize = curcmd.get_help_size(helpsize, recursive);
+                }
+            });
+        }
+
+        self.subcommands.forEach( function( curcmd)) {
+            helpsize.cmdnamesize = len(curcmd.cmdname) + 2;
+            helpsize.cmdhelpsize = len(curcmd.helpinfo);
+        }
+        return helpsize;
+    };
+
+    self.get_help_info = function (helpsize, parentcmds) {
+        var retstr = '';
+        var rootcmds;
+        var optname;
+        var optexpr;
+        var opthelp;
+        if (! not_null(helpsize)) {
+            helpsize = null;
+        }
+        if (! not_null(parentcmds)) {
+            parentcmds = [];
+        }
+
+        if ( ! not_null(helpsize)) {
+            helpsize = self.get_help_size();
+        }
+
+        if (not_null(self.usage)) {
+            retstr += self.usage;
+        } else {
+            rootcmds = self;
+            if (parentcmds.length > 0 ) {
+                rootcmds = parentcmds[0];
+            }
+            if (not_null(rootcmds.prog)) {
+                retstr += util.format('%s', rootcmds.prog);
+            } else {
+                retstr += util.format('%s', process.argv[1]);
+            }
+
+            if (parentcmds.length > 0) {
+                parentcmds.forEach( function(curcmd) {
+                    retstr += util.format(' %s',curcmd.cmdname);
+                });
+            }
+
+            retstr += util.format('%s', self.cmdname);
+
+            if (self.cmdopts.length > 0) {
+                retstr += util.format(' [OPTIONS]');
+            }
+
+            if (self.subcommands.length > 0) {
+                retstr += util.format(' [SUBCOMMANDS]');
+            }
+
+            self.cmdopts.forEach( function( curopt) {
+                if (curopt.flagname === '$') {
+                    if (curopt.nargs === '+') {
+                        retstr += util.format(' args...');
+                    } else if (curopt.nargs === '*') {
+                        retstr += util.format(' [args...]');
+                    } else if (curopt.nargs === '?') {
+                        retstr += util.format(' arg');
+                    } else {
+                        if (curopt.nargs > 1) {
+                            retstr += ' args...';
+                        } else if (curopt === 1) {
+                            retstr += ' arg';
+                        } else {
+                            retstr += '';
+                        }
+                    }
+                }
+            });
+            retstr += '\n';
+        }
+
+        if (not_null(self.description)) {
+            retstr += util.format('%s\n', self.description);
+        }
+
+        if (self.cmdopts.length > 0) {
+            retstr += '[OPTIONS]\n';
+            self.cmdopts.forEach( function( curopt) {
+                if (curopt.typename !== 'args') {
+                    var curstr = '';
+                    optname = self.__get_opt_optname(curopt);
+                    optexpr = self.__get_opt_expr(curopt);
+                    opthelp = self.__get_opt_helpinfo(curopt);
+                    curstr += util.format('    ');
+                    curstr += util.format('%-*s %-*s %-*s\n', helpsize.optnamesize, )
+                }
+            });
+        }
+        return retstr;
     };
 
     return self;
