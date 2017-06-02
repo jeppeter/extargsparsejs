@@ -2,6 +2,7 @@ var keyparse = require('./keyparse');
 var util = require('util');
 var fs = require('fs');
 var assert = require('assert');
+var stacktrace = require('stack-trace');
 
 var call_args_function = function (funcname, context, ...args) {
     var pkgname;
@@ -123,6 +124,33 @@ var format_length = function (s, len) {
     }
     return rets;
 };
+
+function LoggerObject() {
+    var self = {};
+
+    self.format_call_message = function ( msg , callstack) {
+        var stktr = stacktrace.get();
+        var retstr = '';
+        if (callstack !== undefined) {
+            retstr += util.format('[%s:%s:%s]', format_length(stktr[callstack].getFileName(),10),
+                format_length(stktr[callstack].getFunctionName(), 20), 
+                format_length(stktr[callstack].getLineNumber(), 5));
+        }
+        retstr += msg;
+        return retstr;
+    };
+
+    self.info = function (msg , callstack) {
+        var retmsg = '';
+        if (callstack === undefined) {
+            callstack = 1;
+        }
+        retmsg = self.format_call_message(msg,callstack);
+        console.log(retmsg);
+        return ;
+    };
+    return self;
+}
 
 
 function ExtArgsOption(setting) {
@@ -498,16 +526,72 @@ function ParserCompat(keycls,opt) {
                 cmdname = self.__get_cmd_cmdname(curcmd);
                 cmdhelp = self.__get_cmd_helpinfo(curcmd);
                 curstr = '';
-                curstr += util.format(' ');
+                curstr += util.format('    ');
                 curstr += util.format('%s %s', format_length(cmdname,helpsize.cmdnamesize),
                         format_length(cmdhelp, helpsize.cmdhelpsize));
+                if (curstr.length < self.screenwidth) {
+                    retstr += curstr + '\n';
+                } else {
+                    curstr = '';
+                    curstr += '    ';
+                    curstr += format_length(cmdname,helpsize.cmdnamesize);
+                    retstr += curstr + '\n';
+                    if (self.screenwidth >= 60) {
+                        retstr += self.__get_indent_string(cmdhelp, 20, self.screenwidth);
+                    } else {
+                        retstr += self.__get_indent_string(cmdhelp, 15, self.screenwidth);
+                    }
+                }
             });
+        }
+
+        if (not_null(self.epilog)) {
+            retstr += '\n' + self.epilog + '\n';
+        }
+
+        return retstr;
+    };
+
+    self.format = function () {
+        var retstr = '';
+        var idx = 0;
+        retstr += util.format('@%s|', self.cmdname);
+        if (self.subcommands.length > 0) {
+            idx = 0;
+            retstr += util.format('subcommands[%d]<',self.subcommands.length);
+            for (idx = 0;idx < self.subcommands.length; idx += 1) {
+                if (idx > 0) {
+                    retstr += '|';
+                }
+                retstr += util.format('%s',self.subcommands[idx].cmdname);
+            }
+            retstr += '>';
+        }
+
+        if (self.cmdopts.length > 0) {
+            retstr += util.format('cmdopts[%d]<', self.cmdopts.length);
+            for (idx = 0; idx < self.cmdopts.length; idx += 1) {
+                if (idx > 0) {
+                    retstr += '|';
+                }
+                retstr += util.format('%s', self.subcommands[idx].format());
+            }
+            retstr += '>';
         }
         return retstr;
     };
 
     return self;
 };
+
+function ParseState(args,maincmd,optattr) {
+    var self = {};
+    if (optattr === undefined) {
+        optattr = null;
+    }
+
+    return self;
+}
 
 set_property_value(exports, 'COMMAND_SET', 'COMMAND_SET');
 set_property_value(exports, 'SUB_COMMAND_JSON_SET', 'SUB_COMMAND_JSON_SET');
