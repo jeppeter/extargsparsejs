@@ -690,6 +690,47 @@ function ParseState(args,maincmd,optattr) {
         return cmdname;
     };
 
+    self.__find_sub_command = function (name) {
+        var idx = dict.cmdpaths.length;
+        if (idx > 0) {
+            var cmdparent = dict.cmdpaths[(idx-1)];
+            var jdx;
+            for (jdx = 0;jdx < cmdparent.subcommands.length; jdx += 1) {
+                var curcmd = cmdparent.subcommands[jdx];
+                if (curcmd === name) {
+                    dict.cmdpaths.push(curcmd);
+                    return curcmd.keycls;
+                }
+            }
+        }
+        return null;
+    };
+
+    self.add_parse_args = function (nargs) {
+        if (dict.curcharidx >= 0) {
+            if (nargs > 0 && dict.shortcharargs > 0) {
+                var errstr;
+                errstr = util.format('[%s] already set args', dict.args[dict.curidx]);
+                throw new Error(errstr);
+            }
+            if (dict.shortcharargs < 0) {
+                dict.shortcharargs = 0;
+            }
+            dict.shortcharargs += nargs;
+        } else {
+            if (dict.longargs > 0) {
+                var errstr;
+                errstr = util.format('[%s] already set args', dict.args[dict.curidx]);
+                throw new Error(errstr);
+            }
+
+            if (dict.longargs < 0) {
+                dict.longargs = 0;
+            }
+            dict.longargs += nargs;
+        }
+    };
+
     return self;
 }
 
