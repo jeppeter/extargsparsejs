@@ -125,8 +125,21 @@ var format_length = function (s, len) {
     return rets;
 };
 
-function LoggerObject() {
+function LoggerObject(cmdname) {
     var self = {};
+    var envname ;
+    if (cmdname === undefined || cmdname === null) {
+        cmdname = 'extargsparse';
+    }
+
+    self.loglevel = 0;
+
+    envname = util.format('%s_LOGLEVEL', cmdname);
+    envname = envname.toUpperCase();
+    if (process.env[envname] !== undefined && 
+        process.env[envname] !== null) {
+        self.loglevel = parseInt(process.env[envname]);
+    }
 
     self.format_call_message = function ( msg , callstack) {
         var stktr = stacktrace.get();
@@ -141,14 +154,61 @@ function LoggerObject() {
     };
 
     self.info = function (msg , callstack) {
-        var retmsg = '';
-        if (callstack === undefined) {
-            callstack = 1;
+        if (self.loglevel >= 2)  {
+            var retmsg = '';
+            if (callstack === undefined) {
+                callstack = 1;
+            }
+            retmsg = self.format_call_message(msg,callstack);
+            console.log(retmsg);
         }
-        retmsg = self.format_call_message(msg,callstack);
-        console.log(retmsg);
         return ;
     };
+
+    self.warn = function(msg , callbastack) {
+        if (self.loglevel >= 1) {
+            var retmsg = '';
+            if (callstack === undefined) {
+                callstack = 1;
+            }
+            retmsg = self.format_call_message(msg,callstack);
+            console.log(retmsg);            
+        }
+    };
+
+    self.error = function(msg , callstack) {
+        if (self.loglevel >= 0) {
+            var retmsg = '';
+            if (callstack === undefined) {
+                callstack = 1;
+            }
+            retmsg = self.format_call_message(msg,callstack);
+            console.log(retmsg);            
+        }
+    };
+
+    self.debug = function(msg, callstack) {
+        if (self.loglevel >= 3) {
+            var retmsg = '';
+            if (callstack === undefined) {
+                callstack = 1;
+            }
+            retmsg = self.format_call_message(msg,callstack);
+            console.log(retmsg);            
+        }
+    };
+
+    self.debug = function(msg, callstack) {
+        if (self.loglevel >= 4) {
+            var retmsg = '';
+            if (callstack === undefined) {
+                callstack = 1;
+            }
+            retmsg = self.format_call_message(msg,callstack);
+            console.log(retmsg);            
+        }
+    };
+
     return self;
 }
 
@@ -175,8 +235,7 @@ function ExtArgsOption(setting) {
         screenwidth : 80,
         flagnochange : false
     };
-    var self = {};
-
+    var self = LoggerObject();
     self = setting_object(self,default_value);
     if (typeof setting === 'object') {
         self = setting_object(self, setting);
@@ -187,7 +246,7 @@ function ExtArgsOption(setting) {
 }
 
 function HelpSize() {
-    var self = {};
+    var self = LoggerObject();
     var dict = {};
     dict.optnamesize = 0;
     dict.optexprsize = 0;
@@ -226,7 +285,7 @@ var not_null = function (v) {
 
 function ParserCompat(keycls,opt) {
     'use strict';
-    var self = {};
+    var self = LoggerObject();
     if (keycls === undefined) {
         keycls = null;
     }
@@ -585,10 +644,51 @@ function ParserCompat(keycls,opt) {
 };
 
 function ParseState(args,maincmd,optattr) {
-    var self = {};
-    if (optattr === undefined) {
-        optattr = null;
+    var self = LoggerObject();
+    var dict = {};
+    if (optattr === undefined || optattr === null) {
+        optattr = ExtArgsOption();
     }
+
+    dict.cmdpaths = [maincmd];
+    dict.curidx = 0;
+    dict.curcharidx = -1;
+    dict.shortcharargs = -1;
+    dict.longargs = -1;
+    dict.keyidx = -1;
+    dict.validx = -1;
+    dict.args = args;
+    dict.ended = 0;
+    dict.longprefix = optattr.longprefix;
+    dict.shortprefix = optattr.shortprefix;
+
+    if ((dict.shortprefix === null || dict.longprefix === null ||
+        dict.shortprefix !== dict.longprefix)) {
+        dict.bundlemode = true;
+    } else {
+        dict.bundlemode = false;
+    }
+
+    self.format_cmdname_path = function (curparser) {
+        var cmdname = '';
+        var idx;
+        if (curparser === undefined) {
+            curparser = null;
+        }
+        if (curparser === null) {
+            cmdname = dict.cmdpaths;
+        } else {
+            for (idx = 0;idx < curparser.length ;idx += 1) {
+                var c;
+                c = curparser[idx];
+                if (cmdname.length > 0) {
+                    cmdname += '.';
+                }
+                cmdname += c.cmdname;
+            }
+        }
+        return cmdname;
+    };
 
     return self;
 }
