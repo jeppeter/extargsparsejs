@@ -643,6 +643,8 @@ function ParserCompat(keycls,opt) {
     return self;
 };
 
+
+
 function ParseState(args,maincmd,optattr) {
     var self = LoggerObject();
     var dict = {};
@@ -918,11 +920,100 @@ function ParseState(args,maincmd,optattr) {
 
                 idx = dict.cmdpaths.length - 1;
                 while (idx >= 0) {
-                    
+                    curcmd = dict.cmdpaths[idx];
+                    for (jdx = 0; jdx < curcmd.cmdopts.length ; jdx += 1) {
+                        curopt = curcmd.cmdopts[jdx];
+                        if (!curopt.isflag) {
+                            continue;
+                        }
+                        if (curopt.flagname === '$') {
+                            continue;
+                        }
+                        self.info(util.format('[%d](%s) curarg [%s]', idx, curopt.shortopt,curarg));
+                        if (not_null(curopt.shortopt) && curopt.shortopt === curarg)  {
+                            dict.keyidx = oldidx;
+                            dict.validx = (oldidx + 1);
+                            dict.shortcharargs = -1;
+                            dict.longargs = -1;
+                            self.info(util.format('oldidx %d (len %d)', oldidx, dict.args.length));
+                            dict.curidx = oldidx;
+                            dict.curcharidx = curopt.shortopt.length;
+                            self.info(util.format('[%s]shortopt (%s)', oldidx, curopt.shortopt));
+                            return curopt;
+                        }
+                    }
+                    idx -= 1;
+                }
+
+                /*it maybe the sub command ,so find it*/
+                curopt = self.__find_sub_command(dict.args[oldidx]);
+                if (curopt !== null) {
+                    self.info(util.format('find %s', dict.args[oldidx]));
+                    dict.keyidx = oldidx;
+                    dict.curidx = (oldidx  + 1);
+                    dict.validx = (oldidx + 1);
+                    dict.curcharidx = -1;
+                    dict.shortcharargs = -1;
+                    dict.longargs = -1;
+                    return curopt;
+                }
+
+                /*now no thing to find ,suppose it is args ,so handle it when 
+                  parse all or not*/
+                if (dict.parseall) {
+                    dict.leftargs.push(dict.args[oldidx]);
+                    oldidx += 1;
+                    dict.keyidx = -1;
+                    dict.validx = oldidx;
+                    dict.curidx = oldidx;
+                    dict.curcharidx = -1;
+                    dict.shortcharargs = -1;
+                    dict.longargs = -1;
+                    return self.__find_key_cls();
+                } else {
+                    dict.ended = 1;
+                    dict.leftargs = dict.leftargs.concat(dict.args.splice(oldidx));
+                    dict.keyidx = -1;
+                    dict.curidx = oldidx;
+                    dict.curcharidx = -1;
+                    dict.shortcharargs = -1;
+                    dict.longargs = -1;
+                    return null;
                 }
             }
         }
     };
+
+    self.step_one = function () {
+        var curopt = null;
+        if (dict.ended) {
+            return null;
+        }
+
+        curopt = self.__find_key_cls();
+        if (curopt === null) {
+            return null;
+        }
+
+        if (!curopt.iscmd) {
+            dict.optval = curopt.optdest;
+        } else {
+            dict.optval = self.format_cmdname_path(dict.cmdpaths);
+        }
+        return curopt;
+    };
+
+    self.get_cmd_paths = function () {
+        return dict.cmdpaths;
+    };
+
+    self.get_optval = function () {
+        return dict.optval;
+    };
+
+    self.get_validx = function () {
+        return dict.validx;
+    }
 
     return self;
 }
@@ -935,9 +1026,85 @@ set_property_value(exports, 'ENV_SUB_COMMAND_JSON_SET', 'ENV_SUB_COMMAND_JSON_SE
 set_property_value(exports, 'ENV_COMMAND_JSON_SET', 'ENV_COMMAND_JSON_SET');
 set_property_value(exports, 'DEFAULT_SET', 'DEFAULT_SET');
 
+function set_attr_args(self, args, prefix) {
+    var keys = Object.keys(args);
+    var idx;
+    var curkey;
+    var startkey = '';
+    if (prefix !== undefined && prefix.length > 0) {
+        startkey = util.format('%s_', prefix);
+    }
+    for (idx = 0; idx < keys.length; idx +=1) {
+        curkey = keys[idx];
+        if (startkey.length === 0 || curkey.startsWith(startkey)) {
+            self[curkey] = args[curkey];
+        }
+    }
+    return;
+}
+
+function OptCheck() {
+    var self = {};
+    var dict = {};
+
+    self.__reset = function () {
+        dict.longopt = [];
+        dict.shortopt = [];
+        dict.varname = [];
+        return self;
+    };
+
+    self.get_longopt = function () {
+        return dict.longopt;
+    };
+
+    self.get_shortopt = function () {
+        return dict.shortopt;
+    };
+
+    self.get_varname = function () {
+        return dict.varname;
+    }
+
+    self.copy = function(other) {
+        self.__reset();
+        dict.longopt = dict.longopt.concat(other.get_longopt());
+        dict.shortopt = dict.shortopt.concat(other.get_shortopt());
+        dict.varname = dict.varname.concat(other.get_varname());
+        return ;
+    };
+
+    self.add_and_check = function(typename, value) {
+        if (typename === 'longopt') {
+            if (dict.longopt.indexOf(value) >= 0) {
+                return false;
+            }
+
+            dict.longopt.push(value);
+            return true;
+        } else if (typename === 'shortopt') {
+            if (dict.shortopt.indexOf(value) >= 0) {
+                return false;
+            }
+            dict.shortopt.push(value);
+            return true;
+        } else if (typename === 'varname') {
+            if (dict.varname.indexOf(value) >= 0) {
+                return false;
+            }
+            dict.varname.push(value);
+            return true;
+        }
+        return false;
+    };
+
+    return self.__reset();
+}
+
 function NewExtArgsParse(option) {
     'use strict';
-    var parser = {};
+    var reserved_args = ['subcommand','subnargs','nargs','extargs','args'];
+    var parser = LoggerObject();
     var opt = option || {};
     var self;
     var errstr2;
@@ -950,7 +1117,7 @@ function NewExtArgsParse(option) {
     parser.error = 0;
     parser.keycls = null;
     parser.tabwidth = 4;
-    //tracelog.info('argv (%s)', process.argv);
+
     if (process.argv.length > 1) {
         parser.cmdname = process.argv[1];
     } else {
@@ -979,57 +1146,264 @@ function NewExtArgsParse(option) {
         parser.cmdname = opt.cmdname;
     }
 
-    self.check_flag_insert = function (keycls, curparser) {
+    self.__format_cmd_from_cmd_array = function (cmdarray) {
+        var formcmdname = '';
         var idx;
-        var curflag;
-        if (curparser) {
-            for (idx = 0; idx < curparser.flags.length; idx += 1) {
-                curflag = curparser.flags[idx];
-                if (curflag.optdest === keycls.optdest) {
-                    return false;
-                }
-            }
-            curparser.flags.push(keycls);
-        } else {
-            for (idx = 0; idx < self.flags.length; idx += 1) {
-                curflag = self.flags[idx];
-                if (curflag.optdest === keycls.optdest) {
-                    return false;
-                }
-            }
-            self.flags.push(keycls);
+        var c;
+        if (! not_null(cmdarray)) {
+            return formcmdname;
         }
+        for (idx = 0;idx < cmdarray.length ;idx +=1){
+            c = cmdarray[idx];
+            if (formcmdname.length > 0) {
+                formcmdname += '.';
+            }
+            formcmdname += c.cmdname;
+        }
+        return formcmdname;
+    };
+
+    self.__need_args_error = function (args, validx, keycls, params) {
+        var keyval = '';
+        if (validx > 0) {
+            keyval = params[(validx - 1)];
+        }
+
+        if (keyval === keycls.longopt) {
+            keyval = keycls.longopt;
+        } else if ( not_null(keycls.shortopt) && keyval.indexOf(keycls.shortflag) > 0) {
+            /*we have shortprefix before ,so do this*/
+            keyval = keycls.shortopt;
+        }
+        self.error_msg(util.format('[%s] need args', keyval));
+        return;
+    };
+
+    self.__bool_action = function(args, validx, keycls, params) {
+        if (keycls.value) {
+            args[keycls.optdest] = false;
+        } else {
+            args[keycls.optdest] = true;
+        }
+        return 0;
+    };
+
+    self.__append_action = function(args, validx, keycls, params) {
+        var value ;
+        if (validx >= params.length) {
+            self.__need_args_error(args, validx, keycls, params);
+        }
+        value = params[validx];
+        if (!not_null(args[keycls.optdest])) {
+            args[keycls.optdest] = [];
+        }
+        args[keycls.optdest].push(value);
+        return 1;
+    };
+
+    self.__string_action = function(args, validx, keycls, params) {
+        if (validx >= params.length) {
+            self.__need_args_error(args, validx, keycls, params);
+        }
+        args[keycls.optdest] = params[validx];
+        return 1;
+    };
+
+    self.__jsonfile_action = function(args, validx, keycls, params) {
+        return self.__string_action(args, validx, keycls, params);
+    };
+
+    self.__int_action = function(args, validx, keycls, params) {
+        var base =10;
+        var value ;
+        if (validx >= params.length) {
+            self.__need_args_error(args, validx, keycls, params);
+        }
+
+        value = params[validx];
+        self.info(util.format('set value [%s][%s]', validx, value));
+        if (value.startsWith('0x') || value.startsWith('0X')) {
+            value = value.splice(2);
+            base = 16;
+        } else if (value.startsWith('x') || value.startsWith('X')) {
+            value = value.splice(2);
+            base = 16;
+        }
+        value = value.toLowerCase();
+
+        if ((!value.match('^[0-9a-f]+$') && base === 16) || 
+            (!value.match('^[0-9]+$') && base === 10)) {
+            self.error_msg(util.format('%s not valid int', params[validx]));
+        }
+
+        args[keycls.optdest] = parseInt(value, base);
+        return 1;
+    };
+
+    self.__inc_action = function(args, validx, keycls, params) {
+        if (! not_null(args[keycls.optdest])) {
+            args[keycls.optdest] = 0;
+        }
+        args[keycls.optdest] += 1;
+        return 0;
+    };
+
+    self.__float_action = function(args, validx, keycls, params) {
+        var value;
+        if (validx >= params.length) {
+            self.__need_args_error(args, validx, keycls, params);
+        }
+        value = params[validx];
+        if (!value.match('^[0-9]+(\.[0-9]+)?$')) {
+            self.error_msg(util.format('%s not valid float', params[validx]));
+        }
+        args[keycls.optdest] = parseFloat(value);
+        return 1;
+    };
+
+    self.__help_action = function(args, validx, keycls, value) {
+        self.print_help(process.stdout, value);
+        process.exit(0);
+        return 0;
+    };
+
+    self.__command_action = function(args, validx, keycls, params) {
+        return 0;
+    };
+
+    self.__json_value_base = function(args, keycls, value) {
+        args[keycls.optdest] = value;
+        return;
+    };
+
+    self.__json_value_error = function(args, keycls, value) {
+        throw new Error('error set json value');
+        return ;
+    };
+
+    self.__get_full_trace_back = function(callstck,tabs,cnt) {
+        if (! not_null(callstck)) {
+            callstck = 1;
+        }
+        if (! not_null(tabs)) {
+            tabs = 1;
+        }
+        if (! not_null(cnt)) {
+            cnt = 0;
+        }
+        var rets = '';
+        var stktr = stacktrace.get();
+        var idx;
+        for (idx =callstck ;idx < stktr.length ;idx += 1) {
+            rets += format_length('', tabs * 4);
+            rets += util.format('[%d][%s:%s:%s]\n', idx, stktr[idx].getFileName(),
+                stktr[idx].getFunctionName(),stktr[idx].getLineNumber());            
+        }
+        return 
+    };
+
+    self.error_msg = function(message) {
+        var output = false;
+        var outs = '';
+        if (dict.output_mode.length > 0) {
+            if (dict.output_mode.splice(-1) === 'bash') {
+                outs = '';
+                outs += 'cat >&2 <<EXTARGSEOF\n'
+                outs += util.format('parse command error\n    %s\n', message);
+                outs += 'EXTARGSEOF\n';
+                outs += 'exit 3\n';
+                process.stdout.write(outs);
+                process.exit(3);
+            }
+        }
+        if (! output){
+            outs = 'parse command error\n'
+            outs += util.format('    %s', self.format_call_msg(message,2));
+        }
+
+        if (dict.error_handler === 'exit') {
+            process.stderr.write(outs);
+            process.exit(3);
+            return;
+        }
+        throw new Error(outs);
+        return;
+    };
+
+    self.__check_flag_insert = function (keycls, curparser) {
+        if (!not_null(curparser)) {
+            curparser = null;
+        }
+        var lastparser;
+        var idx;
+        var curopt;
+
+        if (not_null(curparser)) {
+            lastparser = curparser.splice(-1);
+        } else {
+            lastparser = dict.maincmd;
+        }
+        for (idx =0;idx < lastparser.cmdopts.length ;idx += 1) {
+            curopt = lastparser.cmdopts[idx];
+            if (curopt.flagname !== '$' && keycls.flagname !== '$' ) {
+                if (curopt.typename !== 'help' && keycls.typename !== 'help') {
+                    if (curopt.optdest === keycls.optdest ) {
+                        return false;
+                    }
+                } else if (curopt.typename === 'help' && keycls.typename === 'help') {
+                    return false;
+                }
+            } else if (curopt.flagname === '$' && keycls.flagname === '$') {
+                return false;
+            }
+        }
+        lastparser.cmdopts.push(keycls);
         return true;
     };
 
-    self.check_flag_insert_mustsucc = function (keycls, curparser) {
+    self.__check_flag_insert_mustsucc = function (keycls, curparser) {
         var inserted;
         var errstr;
 
-        inserted = self.check_flag_insert(keycls, curparser);
+        inserted = self.__check_flag_insert(keycls, curparser);
         if (!inserted) {
-            errstr = util.format('(%s) has inserted', keycls.optdest);
-            throw new Error(errstr);
+            var curcmdname = '';
+            var idx;
+            if (not_null(curparser)) {
+                for (idx=0;idx < curparser.length ;idx += 1) {
+                    if (idx > 0) {
+                        curcmdname += '.';
+                    }
+                    curcmdname += curparser[idx].cmdname;
+                }
+            }
+            errstr = util.format('(%s) already in command(%s)', keycls.flagname,cmdname);
+            self.error_msg(errstr);
         }
         return inserted;
     };
 
-    self.load_command_line_args = function (prefix, keycls, curparser) {
-        prefix = prefix;
-        if (curparser) {
-            if (curparser.keycls !== null) {
-                return false;
-            }
-            curparser.keycls = keycls;
-            return true;
+    self.__load_command_line_base = function(prefix, keycls, curparser) {
+        if (! not_null(curparser)) {
+            curparser = null;
         }
-
-        if (self.keycls !== null) {
-            return false;
+        if (keycls.isflag && keycls.flagname !== '$' && 
+            reserved_args.indexOf(keycls.flagname)) {
+            self.error_msg(util.format('(%s) in reserved_args (%s)', keycls.flagname, reserved_args));
         }
-        self.keycls = keycls;
+        self.__check_flag_insert_mustsucc(keycls,curparser);
         return true;
     };
+
+
+    self.__load_command_line_args = function (prefix, keycls, curparser) {
+        return self.__check_flag_insert(keycls, curparser);
+    };
+
+    self.__load_command_line_help = function (prefix, keycls, curparser) {
+        return self.__check_flag_insert(keycls, curparser);
+    };
+
     self.load_command_line_boolean = function (prefix, keycls, curparser) {
         prefix = prefix;
         return self.check_flag_insert_mustsucc(keycls, curparser);

@@ -14,7 +14,14 @@
     "tape": "latest",
     "mktemp": "latest"
   },
-  "keywords": ["command", "parameters", "CLI"],
+  "keywords": [
+    "command",
+    "parameters",
+    "CLI"
+  ],
   "author": "jeppeter@gmail.com",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "stack-trace": "latest"
+  }
 }
