@@ -1404,6 +1404,163 @@ function NewExtArgsParse(option) {
         return self.__check_flag_insert(keycls, curparser);
     };
 
+    self.__load_command_line_jsonfile = function(prefix, keycls, curparser) {
+        return self.__check_flag_insert(keycls, curparser);
+    };
+
+    self.__load_command_line_json_added = function(curparser) {
+        var prefix = '';
+        var key = util.format('%s##json input file to get the value set##', dict.jsonlong);
+        var value = null;
+        var keycls;
+        prefix = self.__format_cmd_from_cmd_array(curparser);
+        prefix = prefix.replace('.','_');
+        keycls = keyparse.KeyParser(prefix, key, value, true, false, true, dict.longprefix, dict.shortprefix);
+        return self.__load_command_line_jsonfile(prefix, keycls, curparser);
+    };
+
+    self.__load_command_line_help_added = function(curparser) {
+        if (! not_null(curparser)) {
+            curparser = null;
+        }
+        var key = util.format('%s', dict.helplong);
+        var value = null;
+        var keycls;
+        if (not_null(dict.helpshort)) {
+            key += util.format('|%s', dict.helpshort);
+        }
+        key += '##to display this help information##';
+        keycls = keyparse.KeyParser('', key, value, true, true, false, dict.longprefix, dict.shortprefix);
+        return self.__load_command_line_help(keycls, curparser);
+    };
+
+    self.init_fn = function() {
+        dict.options = opt;
+        dict.maincmd = ParserCompat(None, opt);
+        dict.maincmd.prog = opt.prog;
+        dict.maincmd.usage = opt.usage;
+        dict.maincmd.description = opt.description;
+        dict.maincmd.epilog = opt.epilog;
+        dict.maincmd.version = opt.version;
+        dict.error_handler = opt.errorhandler;
+        dict.help_handler = opt.helphandler;
+        dict.output_mode = [];
+        dict.ended = 0;
+        dict.longprefix = opt.longprefix;
+        dict.shortprefix = opt.shortprefix;
+        dict.nohelpoption = opt.nohelpoption;
+        dict.nojsonoption = opt.nojsonoption;
+        dict.helplong = opt.helplong;
+        dict.helpshort = opt.helpshort;
+        dict.jsonlong = opt.jsonlong;
+        dict.cmdprefixadded = opt.cmdprefixadded;
+        dict.load_command_map = {
+            string: self.__load_command_line_base  ,
+            unicode: self.__load_command_line_base  ,
+            int: self.__load_command_line_base  ,
+            long: self.__load_command_line_base  ,
+            float: self.__load_command_line_base  ,
+            list:  self.__load_command_line_base  ,
+            boolean: self.__load_command_line_base  ,
+            args:  self.__load_command_line_args  ,
+            command: self.__load_command_subparser  ,
+            prefix: self.__load_command_prefix  ,
+            help: self.__load_command_line_base  ,
+            jsonfile:  self.__load_command_line_base  ,
+        };
+        dict.opt_parse_handle_map = {
+            string:   self.__string_action   ,
+            unicode:   self.__string_action   ,
+            boolean:   self.__bool_action   ,
+            int:    self.__int_action  ,
+            long:   self.__int_action  ,
+            list:   self.__append_action   ,
+            count:  self.__inc_action   ,
+            help:   self.__help_action  ,
+            jsonfile:  self.__jsonfile_action   ,
+            command:  self.__command_action   ,
+            float:  self.__float_action   ,
+        };
+        dict.load_priority = opt.priority;
+        dict.parse_set_map = {
+            SUB_COMMAND_JSON_SET: self.__parse_sub_command_json_set  ,
+            COMMAND_JSON_SET:  self.__parse_command_json_set  ,
+            ENVIRONMENT_SET:  self.__parse_environment_set  ,
+            ENV_SUB_COMMAND_JSON_SET:  self.__parse_env_subcommand_json_set  ,
+            ENV_COMMAND_JSON_SET:  self.__parse_env_command_json_set  ,
+        };
+        dict.set_json_value = {
+            string: self.__json_value_base  ,
+            unicode:  self.__json_value_base  ,
+            boolean:  self.__json_value_base  ,
+            int:  self.__json_value_base  ,
+            long:  self.__json_value_base  ,
+            list:  self.__json_value_base  ,
+            count:  self.__json_value_base  ,
+            jsonfile:  self.__json_value_base  ,
+            float:  self.__json_value_base  ,
+            command:  self.__json_value_error  ,
+            help:  self.__json_value_error  ,
+        };
+        return self;
+    };
+
+    self.__call_json_value = function(args, keycls, value) {
+        if (not_null(keycls.attr) && not_null(keycls.attr.jsonfunc)) {
+            call_args_function(keycls.attr.jsonfunc,  args, keycls, value);
+            return;
+        }
+        dict.set_json_value[keycls.typename](args,  keycls,  value);
+        return;
+    };
+
+    self.__format_cmdname_path = function(curparser) {
+        var curcmdname = '';
+        if (not_null(curparser)) {
+            var c;
+            var idx;
+            for(idx=0;idx<curparser.length;idx+=1) {
+                c = curparser[idx];
+                if (curcmdname.length > 0) {
+                    curcmdname += '.';
+                }
+                curcmdname += c.cmdname;
+            }
+        }
+        return curcmdname;
+    };
+
+    self.__find_commands_in_path = function(cmdname, curparser) {
+        var sarr = [''];
+        var commands = [];
+        var idx = 0;
+        var curcommand;
+        if (not_null(cmdname)) {
+            sarr = cmdname.split('.');            
+        }
+        if (not_null(dict.maincmd)) {
+            commands.push(dict.maincmd);
+        }
+
+        while(idx < sarr.length && not_null(cmdname) && cmdname.length > 0) {
+            if (idx !== 0) {
+                curcommand = self.__find_command_inner(sarr[(idx-1)],commands);
+                if (not_null(curcommand)) {
+                    break;
+                }
+                commands.push(curcommand);
+            }
+            idx += 1;
+        }
+        return commands;
+    };
+
+    self.__find_command_inner = function(name, curparser) {
+        var sarr;
+        var curroot;
+        sarr = name.split('.');
+    };
+
     self.load_command_line_boolean = function (prefix, keycls, curparser) {
         prefix = prefix;
         return self.check_flag_insert_mustsucc(keycls, curparser);
