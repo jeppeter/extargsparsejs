@@ -1506,6 +1506,7 @@ function NewExtArgsParse(option) {
     };
 
     self.__call_json_value = function(args, keycls, value) {
+        accessed[keycls.optdest] = true;
         if (not_null(keycls.attr) && not_null(keycls.attr.jsonfunc)) {
             call_args_function(keycls.attr.jsonfunc,  args, keycls, value);
             return;
@@ -1783,6 +1784,90 @@ function NewExtArgsParse(option) {
         fout.write(s);
         return;
     }
+
+    self.__get_args_accessed = function(optdest) {
+        if (accessed[optdest] !== undefined) {
+            return true;
+        }
+        return false;
+    };
+
+    self.__set_jsonvalue_not_defined = function(args, cmd, key, value) {
+        var idx;
+        var chld;
+        var curopt;
+        for (idx = 0; idx < cmd.subcommands.length; idx += 1) {
+            chld = cmd.subcommands[idx];
+            args = self.__set_jsonvalue_not_defined(args, chld, key, value);
+        }
+
+        for (idx = 0; idx < cmd.cmdopts.length; idx += 1) {
+            curopt = cmd.cmdopts[idx];
+            if (curopt.isflag && 
+                curopt.typename !== 'prefix' && 
+                curopt.typename !== 'args' && 
+                curopt.typename !== 'help') {
+                if (curopt.optdest === key) {
+                    if (! self.__get_args_accessed(key)) {
+                        self.__call_json_value(args, key, value);
+                    }
+                    return args;
+                }
+            }
+        }
+        return args;
+    };
+
+    self.__load_jsonvalue = function(args, prefix, jsonvalue) {
+        var k;
+        var idx;
+        var keys = Object.keys(jsonvalue);
+        for(idx=0;idx<keys.length;idx+=1) {
+            k = keys[idx];
+            if (typeof jsonvalue[k] === 'object') {
+                var newprefix = '';
+                if (prefix.length > 0) {
+                    newprefix += util.formt('%s_',prefix);
+                }
+                newprefix += k;
+                args = self.__load_jsonvalue(args, newprefix, jsonvalue[k]);
+            } else {
+                var newkey = '';
+                if (prefix.length > 0) {
+                    newkey += util.format('%s_', prefix);
+                }
+                newkey += k;
+                args = self.__set_jsonvalue_not_defined(args, dict.maincmd, newkey, jsonvalue[k]);
+            }
+        }
+        return args;
+    };
+
+    self.__load_jsonfile = function(args, cmdname, jsonfile) {
+        assert.ok(! dict.nojsonoption, 'must no json file false');
+        assert.ok(not_null(jsonfile), 'jsonfile set');
+        var prefix = '';
+        var jsondata;
+        var v;
+        if (not_null(cmdname)) {
+            prefix += cmdname;
+        }
+        prefix = prefix.replace('.','_');
+        try{
+            jsondata = fs.readFileSync(jsonfile,{
+                encoding: 'utf-8',
+                flag: 'r'
+            });
+        } catch(e) {
+            self.error_msg(util.format('can not read data from [%s]', jsonfile));
+        }
+
+        try{
+
+        } catch(e) {
+
+        }
+    };
 
     self.load_command_line_boolean = function (prefix, keycls, curparser) {
         prefix = prefix;
