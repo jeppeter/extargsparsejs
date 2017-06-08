@@ -1847,7 +1847,7 @@ function NewExtArgsParse(option) {
         assert.ok(! dict.nojsonoption, 'must no json file false');
         assert.ok(not_null(jsonfile), 'jsonfile set');
         var prefix = '';
-        var jsondata;
+        var jsondata;        
         var v;
         if (not_null(cmdname)) {
             prefix += cmdname;
@@ -1863,10 +1863,37 @@ function NewExtArgsParse(option) {
         }
 
         try{
-
+            v = JSON.parse(jsondata);
         } catch(e) {
-
+            self.error_msg(util.format('can not parse (%s)\n%s', jsonfile, self.__get_except_info(e)));
         }
+        self.info(util.format('load (%s) prefix(%s) value (%s)', jsonfile, prefix, jsonvalue));
+        return self.__load_jsonvalue(args, prefix, jsonvalue);
+    };
+
+    self.__set_parser_default_value = function(args, cmd) {
+        var chld;
+        var idx;
+        var curopt;
+        for (idx=0;idx < cmd.subcommands.length; idx += 1) {
+            chld = cmd.subcommands[idx];
+            args = self.__set_parser_default_value(args, chld);
+        }
+        for (idx=0;idx < cmd.cmdopts.length; idx += 1) {
+            curopt = cmd.cmdopts[idx];
+            if (curopt.isflag && 
+                curopt.typename !== 'prefix' &&
+                curopt.typename !== 'args' &&
+                curopt.typename !== 'help') {
+                args = self.__set_jsonvalue_not_defined(args, cmd, curopt.optdest, curopt.value);
+            }
+        }
+        return args;
+    };
+
+    self.__set_default_value = function(args) {
+        args = self.__set_parser_default_value(args, dict.maincmd);
+        return args;
     };
 
     self.load_command_line_boolean = function (prefix, keycls, curparser) {
