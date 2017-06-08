@@ -1896,6 +1896,100 @@ function NewExtArgsParse(option) {
         return args;
     };
 
+    self.__set_environ_value_inner = function(args, prefix, cmd) {
+        var idx;
+        var chld;
+        var curopt;
+        var keycls;
+        var val;
+        var value;
+        for (idx=0; idx < cmd.subcommands.length; idx += 1) {
+            args = self.__set_environ_value_inner(args, prefix, chld);
+        }
+
+        for (idx=0; idx < cmd.cmdopts.length; idx += 1) {
+            keycls = cmd.cmdopts[idx];
+            if (keycls.isflag && 
+                keycls.typename !== 'prefix' &&
+                keycls.typename !== 'args' &&
+                keycls.typename !== 'help') {
+                var optdest = keycls.optdest;
+                var oldopt;
+                oldopt = optdest;
+                if (not_null(accessed[optdest])) {
+                    /*has accessed ,so do not handle this*/
+                    continue;
+                }
+                optdest = optdest.toUpperCase();
+                optdest = optdest.replace('-','_');
+                if (optdest.indexOf('_') < 0) {
+                    /*no _ in the word ,so we add the PREFIX*/
+                    optdest = util.format('EXTARGS_%s', optdest);
+                }
+                if (not_null(process.env[optdest])) {
+                    val = process.env[optdest];
+                    if (keycls.typename === 'string' ||
+                        keycls.typename === 'jsonfile') {
+                        value = val;
+                        self.__call_json_value(args, keycls, value);
+                    } else if (keycls.typename === 'boolean') {
+                        value = false;
+                        if (val.toLowerCase() === 'true') {
+                            value = true;
+                        }
+                        self.__call_json_value(args, keycls, value);
+                    } else if (keycls.typename === 'list') {
+                        try{
+                            value = JSON.parse(val);
+                        } catch(e) {
+                            self.warn(util.format('can not set (%s) for %s = %s\n%s', optdest, oldopt, val,self.__get_except_info(e)));
+                        }
+                        if (Array.isArray(value)) {
+                            self.__call_json_value(args, keycls, value);
+                        } else {
+                            self.warn(util.format('[%s] value (%s) not array', optdest, val));
+                        }
+                    } else if (keycls.typename === 'int' || keycls.typename === 'long' || 
+                              keycls.typename === 'count') {
+                        var base = 10;
+                        if (val.startsWith('0x') || 
+                            val.startsWith('0X')) {
+                            base = 16;
+                            val = val.splice(2);
+                        } else if (val.startsWith('x') ||
+                            val.startsWith('X')) {
+                            base = 16;
+                            val = val.splice(1);
+                        }
+                        val = val.toLowerCase();
+                        value = null;
+                        if (base === 16 && val.match('^[0-9a-f]+$')) {
+                            value = parseInt(val,base);
+                        } else if (base === 10 && val.match('^[0-9]+$')) {
+                            value = parseInt(val,base);
+                        } else {
+                            self.warn(util.format('can not set (%s) for %s = %s', optdest, oldopt, val));
+                        }
+
+                        if (not_null(value)) {
+                            self.__call_json_value(args, keycls, value);
+                        }
+                    } else if (keycls.typename === 'float') {
+                        if (val.match('^[0-9]+(\.[0-9]+)?$')) {
+                            value = parseFloat(val);
+                            self.__call_json_value(args, keycls, value);
+                        } else {
+                            self.warn(util.format('can not set (%s) for %s = %s', optdest, oldopt, val));
+                        }
+                    } else {
+                        self.warn(util.format('internal error when (%s) type(%s)', keycls.optdest, keycls.typename));
+                    }
+                }
+            }
+        }
+
+    };
+
     self.load_command_line_boolean = function (prefix, keycls, curparser) {
         prefix = prefix;
         return self.check_flag_insert_mustsucc(keycls, curparser);
