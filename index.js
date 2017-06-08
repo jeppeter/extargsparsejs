@@ -1558,8 +1558,231 @@ function NewExtArgsParse(option) {
     self.__find_command_inner = function(name, curparser) {
         var sarr;
         var curroot;
+        var nextparsers = [];
+        var c;
+        var idx;
         sarr = name.split('.');
+        curroot = dict.maincmd;
+        if (not_null(curparser)) {
+            nextparsers = curparser;
+            curroot = curparser.splice(-1);
+        }
+
+        if (sarr.length > 1) {
+            nextparsers.push(curroot);
+            for (idx =0; idx < curroot.subcommands.length; idx += 1) {
+                c = curroot.subcommands[idx];
+                if (c.cmdname === sarr[0]) {
+                    nextparsers = [];
+                    if (not_null(curparser)) {
+                        nextparsers = curparser;
+                    }
+                    nextparsers.push(c);
+                    return self.__find_command_inner(sarr.splice(1).join('.'), nextparsers);
+                }
+            }
+        } else {
+            for(idx = 0 ; idx < curroot.subcommands.length ; idx += 1) {
+                c = curroot.subcommands[idx];
+                if (c.cmdname === sarr[0]) {
+                    return c;
+                }
+            }
+        }
+        return null;
     };
+
+    self.__find_subparser_inner = function(cmdname, parentcmd) {
+        var sarr;
+        var idx;
+        var c;
+        var findcmd;
+        if (! not_null(cmdname) || cmdname === '') {
+            return parentcmd;
+        }
+        if (! not_null(parentcmd)) {
+            parentcmd = dict.maincmd;
+        }
+        sarr = cmdname.split('.');
+        for (idx =0; idx < parentcmd.subcommands.length ;idx += 1) {
+            c = parentcmd.subcommands[idx];
+            if (c.cmdname === sarr[0]) {
+                findcmd = self.__find_subparser_inner(sarr.splice(1).join('.'),c);
+                if (not_null(findcmd)) {
+                    return findcmd;
+                }
+            }
+        }
+        return null;
+    };
+
+    self.__get_subparser_inner = function(keycls, curparser) {
+        var cmdname = '';
+        var parentname = self.__format_cmdname_path(curparser);
+        var cmdparser ;
+        cmdname += parentname;
+        if (cmdname.length > 0) {
+            cmdname += '.';
+        }
+        cmdname += keycls.cmdname;
+        cmdparser = self.__find_subparser_inner(cmdname);
+        if (not_null(cmdparser)) {
+            return cmdparser;
+        }
+        cmdparser = ParserCompat(keycls);
+        if (parentcmd.length === 0) {
+            dict.maincmd.subcommands.push(cmdparser);
+        } else {
+            curparser.splice(-1).subcommands.push(cmdparser);
+        }
+        return cmdparser;
+    };
+
+    self.__load_command_subparser = function(prefix, keycls, lastparser) {
+        var parserinner = null;
+        var nextparsers = [];
+        var newprefix = '';
+        if (keycls.iscmd && reserved_args.indexOf(keycls.cmdname) >= 0) {
+            self.error_msg(util.format('command(%s) in reserved_args (%s)', keycls.cmdname,reserved_args));
+        }
+        parserinner = self.__get_subparser_inner(keycls, lastparser);
+        nextparsers = [dict.maincmd];
+        if (not_null(lastparser)) {
+            nextparsers = lastparser;
+        }
+
+        nextparsers.push(parserinner);
+        self.info('nextparser %s', self.format_string(nextparser));
+        self.info('keycls %s', keycls.format());
+        if (dict.cmdprefixadded) {
+            newprefix = prefix;
+            if (newprefix.length > 0) {
+                newprefix += '.';
+            }
+            newprefix += keycls.cmdname;
+        }
+        self.__load_command_line_inner(newprefix, keycls.value, nextparsers);
+        nextparsers.pop();
+        return true;
+    };
+
+    self.__load_command_prefix = function(prefix, keycls, curparser) {
+        if (reserved_args.indexOf(keycls.prefix) >= 0) {
+            self.error_msg(util.format('prefix (%s) in reserved_args (%s)', keycls.prefix, reserved_args));
+        }
+        self.__load_command_line_inner(keycls.prefix, keycls.value, curparser);
+        return true;
+    };
+
+    self.__load_command_line_inner = function(prefix, d, curparser) {
+        var parentpath = [dict.maincmd];
+        var keys = Object.keys(d);
+        var idx;
+        var v;
+        var k;
+        var keycls;
+        var valid;
+        if (!not_null(curparser)) {
+            curparser = null;
+        }
+        if (! dict.nojsonoption) {
+            self.__load_command_line_json_added(curparser);
+        }
+        if (! dict.nohelpoption) {
+            self.__load_command_line_help_added(curparser);
+        }
+
+        if (not_null(curparser)) {
+            parentpath = curparser;
+        }
+
+        for (idx=0; idx < keys.length; idx += 1) {
+            k = keys[idx];
+            v = d[k];
+            self.info(util.format('%s , %s , %s , True', prefix, k, v));
+            keycls = keyparse.KeyParser(prefix, k, v, false, false, false, dict.longprefix, dict.shortprefix, dict.flagnochange);
+            valid = dict.load_command_map[keycls.typename](prefix, keycls, parentpath);
+            if (! valid) {
+                self.error_msg(util.format('can not add (%s, %s)', k, v));
+            }
+        }
+        self.info(util.format('%s', self.format_string(parentpath)));
+        return;
+    };
+
+    retparser.load_command_line = function(d) {
+        if (dict.ended !== 0) {
+            throw new Error(util.format('you have call parse_command_line before call load_command_line_string or load_command_line'));
+        }
+        if (typeof d !== 'object') {
+            self.error_msg(util.format('input parameter (%s) not object', d));
+        }
+        self.__load_command_line_inner('', d, null);
+        return;
+    };
+
+    self.__get_except_info = function(e) {
+        var idx = 1;
+        var rets = '';
+        var stktr = stacktrace.get();
+        rets += util.format('exception: %s\n', e);
+        rets += 'trace back:\n';
+        rets += self.__get_full_trace_back(2, 1, 0);
+        return rets;
+    };
+
+    retparser.load_command_line_string = function(s) {
+        var d;
+        try {
+            d = JSON.parse(s);
+        }catch(e) {
+            self.error_msg(util.format('(%s) not valid json string\n%s', s,self.__get_except_info(e)));
+        }
+        retparser.load_command_line(d);
+        return;
+    };
+
+    self.__print_help = function(cmdparser) {
+        if (not_null(dict.help_handler) && dict.help_handler === 'nohelp') {
+            return 'no help information';
+        }
+        var curcmd ;
+        var cmdpaths = [];
+        var idx;
+        curcmd = dict.maincmd;
+        if (not_null(cmdparser)) {
+            self.info(util.format('cmdparser %s', self.format_string(cmdparser)));
+            curcmd = cmdparser.splice(-1);
+            idx = 0;
+            while(idx < (cmdparser.length - 1)) {
+                cmdparser.push(cmdparser[idx]);
+                idx += 1;
+            }
+        }
+        return curcmd.get_help_info(null, cmdpaths);
+    };
+
+    retparser.print_help = function(fout, cmdname) {
+        if (!not_null(fout)) {
+            fout = process.stderr;
+        }
+        if (!not_null(cmdname)) {
+            cmdname = '';
+        }
+        var s;
+        var paths;
+        paths = self.__find_commands_in_path(cmdname);
+        s = self.__print_help(paths);
+        if (not_null(dict.output_mode) && dict.output_mode.length > 0 && 
+            dict.output_mode.splice(-1) === 'bash') {
+            var outs;
+            outs = util.format('cat <<EOFMM\n%s\nEOFMM\nexit 0', s);
+            process.stdout.write(outs);
+            process.exit(0);
+        }
+        fout.write(s);
+        return;
+    }
 
     self.load_command_line_boolean = function (prefix, keycls, curparser) {
         prefix = prefix;
