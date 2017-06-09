@@ -1987,6 +1987,198 @@ function NewExtArgsParse(option) {
                 }
             }
         }
+    };
+
+    self.__set_environ_value = function(args) {
+        return self.__set_environ_value_inner(args, '', dict.maincmd);
+    };
+
+    self.__check_varname_inner = function(paths, optcheck) {
+        var parentpath = [dict.maincmd];
+        var chld;
+        var idx;
+        var curpath;
+        var copychk;
+        var curopt;
+        var bval;
+
+        if (!not_null(paths)) {
+            paths = null;
+        }
+        if (!not_null(optcheck)) {
+            optcheck = OptCheck();
+        }
+
+        if (not_null(paths)) {
+            parentpath = paths;
+        }
+        for (idx=0;idx < parentpath.splice(-1).subcommands.length; idx += 1) {
+            chld = parentpath.splice(-1).subcommands[idx];
+            curpath = parentpath;
+            curpath.push(chld);
+            copychk = OptCheck();
+            copychk.copy(optcheck);
+            self.__check_varname_inner(curpath, copychk);
+            curpath.pop();
+        }
+
+        for (idx=0; parentpath.splice(-1).cmdopts.length; idx += 1) {
+            curopt = parentpath.splice(-1).cmdopts[idx];
+            if (!curopt.isflag || 
+                curopt.typename === 'args' ||
+                curopt.typename === 'help') {
+                continue;
+            }
+            bval = optcheck.add_and_check('varname', curopt.varname);
+            if (!bval) {
+                self.error_msg(util.format('%s is already in the check list', curopt.varname));
+            }
+            bval = optcheck.add_and_check('longopt', curopt.longopt);
+            if (!bval) {
+                self.error_msg(util.format('%s is already in the check list', curopt.longopt));
+            }
+
+            if (not_null(curopt.shortopt)) {
+                bval = optcheck.add_and_check('shortopt', curopt.shortopt);
+                if (!bval) {
+                    self.error_msg(util.format('%s is already in the check list', opt.shortopt));
+                }
+            }
+        }
+        return;
+    };
+
+    self.__set_command_line_self_args_inner = function(paths) {
+        var parentpath = [dict.maincmd];
+        var chld;
+        var idx;
+        var curopt;
+        var curpath;
+        var setted = false;
+        var cmdname;
+        var prefix;
+        var curkey;
+        if (!not_null(paths)) {
+            paths = null;
+        }
+        if (not_null(paths)) {
+            parentpath = paths;
+        }
+        for (idx=0;idx < parentpath.splice(-1).subcommands.length; idx += 1) {
+            chld = parentpath.splice(-1).subcommands[idx];
+            curpath = parentpath;
+            curpath.push(chld);
+            self.__set_command_line_self_args_inner(curpath);
+            curpath.pop();
+        }
+
+        for (idx=0;idx< parentpath.splice(-1).cmdopts; idx += 1) {
+            curopt = parentpath.splice(-1).cmdopts[idx];
+            if(curopt.isflag && curopt.typename === 'args') {
+                setted = true;
+                break;
+            }
+        }
+
+        if (! setted) {
+            cmdname = self.__format_cmd_from_cmd_array(parentpath);
+            if (! not_null(cmdname)) {
+                self.error_msg(util.format('can not get cmd (%s) whole name', self.format_string(parentpaths)));
+            }
+            prefix = cmdname.replace('.', '_');
+            curkey = keyparse.KeyParser('', '$', '*', true);
+            self.__load_command_line_args('', curkey, parentpath);
+        }
+        return;
+    };
+
+    self.__set_command_line_self_args = function(paths) {
+        if (dict.ended !== 0) {
+            return;
+        }
+        self.__set_command_line_self_args(paths);
+        self.__check_varname_inner();
+        dict.ended = 1;
+    };
+
+    self.__parse_sub_command_json_set = function(args) {
+        if (not_null(args.subcommand) && ! dict.nojsonoption) {
+            var cmds ;
+            cmds = self.__find_commands_in_path(args.subcommand);
+            idx = cmds.length;
+            while(idx >= 2) {
+                var subname ;
+                var dummycmds = cmds.slice();
+                var prefix ;
+                var jsondest;
+                subname = self.__format_cmd_from_cmd_array(dummycmds.splice(0,(idx + 1)));
+                prefix = subname.replace('.', '_');
+                jsondest = util.format('%s_%s', prefix, dict.jsonlong);
+                if (not_null(args[jsondest])) {
+                    args = self.__load_jsonfile(args, subname, args[jsondest]);
+                }
+                idx -= 1;
+            }
+        }
+        return args;
+    };
+
+    self.__parse_command_json_set = function(args) {
+        if (!dict.nojsonoption && not_null(args[dict.jsonlong])) {
+            args = self.__load_jsonfile(args, '', args[dict.jsonlong]);
+        }
+        return args;
+    };
+
+    self.__parse_environment_set = function(args) {
+        return self.__set_environ_value(args);
+    };
+
+    self.__parse_env_subcommand_json_set = function(args) {
+        if (! dict.nojsonoption && not_null(args.subcommand)) {
+            var cmds ;
+            var idx;
+            cmds = self.__find_commands_in_path(args.subcommand);
+            idx = cmds.length;
+            while (idx >= 2) {
+                var subname;
+                var ccmds = cmds.slice();
+                var prefix;
+                var jsondest;
+                subname = self.__format_cmd_from_cmd_array(ccmds.splice(0,(idx+1)));
+                prefix = subname.replace('.', '_');
+                jsondest = util.format('%s_%s', prefix, dict.jsonlong);
+                jsondest = jsondest.replace('-', '_');
+                jsondest = jsondest.toUpperCase();
+                if (not_null(process.env[jsondest])) {
+                    args = self.__load_jsonfile(args, subname, process.env[jsondest]);
+                }
+                idx -= 1;
+            }
+        }
+        return args;
+    };
+
+    self.__parse_env_command_json_set = function(args) {
+        var jsonenv;
+        jsonenv = util.format('EXTARGS_%s', dict.jsonlong);
+        jsonenv = jsonenv.toUpperCase().replace('-', '_').replace('.', '_');
+        if (!dict.nojsonoption && not_null(process.env[jsonenv])) {
+            args = self.__load_jsonfile(args, '', process.env[jsonenv]);
+        }
+        return args;
+    };
+
+    self.__format_cmdname_msg = function(cmdname, msg) {
+        var retmsg = cmdname;
+        if (retmsg.length > 0) {
+            retmsg += ' command ';
+        }
+        retmsg += msg;
+        return retmsg;
+    };
+
+    self.__set_args = function(args, cmdpaths, vals) {
 
     };
 
