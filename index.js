@@ -2179,7 +2179,92 @@ function NewExtArgsParse(option) {
     };
 
     self.__set_args = function(args, cmdpaths, vals) {
+        var argkeycls = null;
+        var cmdname ;
+        var ccmdpaths;
+        var lastcmd;
+        var curopt;
+        var keyname;
+        cmdname = self.__format_cmdname_path(cmdpaths);
+        ccmdpaths = cmdpaths.slice();
+        self.info(util.format('[%s] %s', cmdname, self.format_string(ccmdpaths.splice(-1).cmdopts)));
+        ccmdpaths = cmdpaths.slice();
+        lastcmd = ccmdpaths.splice(-1);
+        for (idx=0; idx < lastcmd.cmdopts.length; idx += 1) {
+            curopt = lastcmd.cmdopts[idx];
+            if (curopt.isflag && 
+                curopt.flagname === '$') {
+                argkeycls = curopt;
+                break;
+            }
+        }
+        if (! not_null(argkeycls)) {
+            self.error_msg(util.format('can not find args in (%s)', cmdname));
+        }
+        if (not_null(vals) && ! Array.isArray(vals)) {
+            self.error_msg( self.__format_cmdname_msg(cmdname,util.format('invalid type args (%s) %s', typeof vals,vals)));
+        }
 
+        if (argkeycls.nargs === '*' || 
+            argkeycls.nargs === '+' ||
+            argkeycls.nargs === '?')  {
+            if (argkeycls.nargs === '?') {
+                if (not_null(vals) && vals.length > 1) {
+                    self.error_msg(self.__format_cmdname_msg(cmdname,'args \'?\' must <= 1'));
+                }
+            } else if (argkeycls.nargs === '+') {
+                if (! not_null(vals) || vals.length < 1) {
+                    self.error_msg(self.__format_cmdname_msg(cmdname, 'args must at least 1'));
+                }
+            }
+        } else {
+            var nargint = parseInt(argkeycls.nargs);
+            if (! not_null(vals)) {
+                if (nargint !== 0) {
+                    self.error_msg(self.__format_cmdname_msg(cmdname,util.format('args must 0 but(%s)', vals)));
+                }
+            } else {
+                if (vals.length !== nargint) {
+                    self.error_msg(self.__format_cmdname_msg(cmdname, util.format('vals(%s) %d != nargs %d', vals,vals.length,nargs)));
+                }
+            }
+        }
+        keyname = 'args';
+        if (cmdpaths.length > 1) {
+            keyname = 'subnargs';
+        }
+        if (not_null(vals)) {
+            args[keyname] = vals;    
+        } else {
+            args[keyname] = [];
+        }
+        cmdname = self.__format_cmd_from_cmd_array(cmdpaths);
+        if (cmdname.length > 0) {
+            args.subcommand = cmdname;
+        }        
+        return args;
+    };
+
+    self.__call_opt_method = function(args, validx, keycls, params) {
+        var nargs;
+        if (not_null(keycls.attr) && not_null(keycls.attr.optparse)) {
+            nargs = call_args_function(keycls.attr.optparse, args, validx, keycls, params);
+            /*to set accessed*/
+            accessed[keycls.optdest] = true;
+        } else {
+            nargs = dict.opt_parse_handle_map[keycls.typename](args, validx, keycls, params);
+        }
+        return nargs;
+    };
+
+    retparser.parse_args = function(params) {
+        var cpargs = process.argv.slice();
+        var parsestate = null;
+        if (! not_null(params)) {
+            params = cpargs.splice(2);
+        }
+        parsestate = ParseState(params, dict.maincmd, dict.options);
+        args = {};
     };
 
     self.load_command_line_boolean = function (prefix, keycls, curparser) {
@@ -2212,7 +2297,7 @@ function NewExtArgsParse(option) {
         for (idx = 0; idx < self.subparsers.length; idx += 1) {
             cursubparser = self.subparsers[idx];
             if (keycls.cmdname === cursubparser.cmdname) {
-                return cursubparser;
+                return cursubparse r;
             }
         }
 
