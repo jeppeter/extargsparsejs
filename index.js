@@ -2260,11 +2260,92 @@ function NewExtArgsParse(option) {
     retparser.parse_args = function(params) {
         var cpargs = process.argv.slice();
         var parsestate = null;
+        var validx;
+        var optval;
+        var keycls;
+        var cmdpaths;
+        var s;
+        var nargs;
         if (! not_null(params)) {
             params = cpargs.splice(2);
         }
         parsestate = ParseState(params, dict.maincmd, dict.options);
         args = {};
+        try{
+            while (true) {
+                keycls = parsestate.step_one();
+                optval = parsestate.get_optval();
+                validx = parsestate.get_validx();
+                nargs = 0;
+                if (!not_null(keycls)) {
+                    cmdpaths = parsestate.get_cmd_paths();
+                    s = '';
+                    cmdpaths.forEach(function(elm) {
+                        s += util.format('%s', elm);
+                    });
+                    args = self.__set_args(args, cmdpaths, optval);
+                    break;
+                } else if (keycls.typename === 'help') {
+                    cmdpaths = parsestate.get_cmd_paths();
+                    s = self.__format_cmd_from_cmd_array(cmdpaths);
+                    self.__call_opt_method(args, validx, keycls, s);
+                } else {
+                    nargs = self.__call_opt_method(args, validx, keycls, params);
+                }
+                parsestate.add_parse_args(nargs);
+                self.info(util.format('%s', args));
+            }
+        } catch(e) {
+            self.error_msg(self.__get_except_info(e));
+        }
+        return args;
+    };
+
+    retparser.parse_command_line = function(params, Context, mode) {
+        var cargs;
+        var pushmode = false;
+        var args;
+        var funcname;
+        var cmds;
+        var getmode = null;
+        var idx;
+        if (not_null(mode)) {
+            pushmode = true;
+            dict.output_mode.push(mode);
+        }
+        args= {};
+        try{
+            self.__set_command_line_self_args();
+            if (! not_null(params)) {
+                cargs = process.argv.slice();
+                params = cargs.splice(2);
+            }
+        } catch(e){
+            if (pushmode) {
+                dict.output_mode.pop();
+                pushmode = false;
+            }
+            args = retparser.parse_args(params);
+            dict.load_priority.forEach(function(elm) {
+                self.info(util.format('priority %s', elm));
+                args = dict.parse_set_map[elm](args);
+            });
+            args = self.__set_default_value(args);
+            if (not_null(args.subcommand)) {
+                cmds = self.__find_commands_in_path(args.subcommand);
+                funcname = cmds.splice(-1).keycls.function;
+                if (dict.output_mode.length > 0) {
+                    idx = (dict.output_mode.length - 1);
+                    getmode = dict.output_mode[idx];
+                }
+                if (not_null(funcname) && ! not_null(getmode)) {
+                    call_args_function(funcname, args, Context);
+                    return args;
+                }
+            }
+        }
+        return args;
+
     };
 
     self.load_command_line_boolean = function (prefix, keycls, curparser) {
