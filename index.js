@@ -2320,11 +2320,6 @@ function NewExtArgsParse(option) {
                 cargs = process.argv.slice();
                 params = cargs.splice(2);
             }
-        } catch(e){
-            if (pushmode) {
-                dict.output_mode.pop();
-                pushmode = false;
-            }
             args = retparser.parse_args(params);
             dict.load_priority.forEach(function(elm) {
                 self.info(util.format('priority %s', elm));
@@ -2343,9 +2338,103 @@ function NewExtArgsParse(option) {
                     return args;
                 }
             }
+        } catch(e){
+            self.error_msg(self.__get_except_info(e));
+        }
+        if (pushmode) {
+            dict.output_mode.pop();
+            pushmode = false;
         }
         return args;
+    };
 
+    self.__get_subcommands = function(cmdname,cmdpaths) {
+        var retnames =null;
+        var copycmd;
+        var sarr;
+        var copysarr;
+        if (! not_null(cmdpaths)) {
+            cmdpaths = null;
+        }
+
+        if (! not_null(cmdpaths)) {
+            cmdpaths = [dict.maincmd];
+        }
+
+        if (! not_null(cmdname) || cmdname.length === 0) {
+            retnames = [];
+            copycmd = cmdpaths.slice();
+            copycmd.splice(-1).subcommands.forEach(function(c) {
+                retnames.push(c);
+            });
+        }
+
+        sarr = cmdname.split('.');
+        copycmd = cmdpaths.slice();
+        copycmd.splice(-1).subcommands.forEach(function(c) {
+            if (c.cmdname === sarr[0]) {
+                cmdpaths.push(c);
+                copysarr = sarr.slice();
+                return self.__get_subcommands(copysarr.splice(1).join('.'),cmdpaths);
+            }
+        });
+        return retnames;
+    };
+
+    self.__get_cmdkey = function(cmdname,cmdpaths) {
+        var retkey = null;
+        var copycmds;
+        var sarr;
+        var copysarr;
+        if (!not_null(cmdpaths)) {
+            cmdpaths = [dict.maincmd];
+        }
+        if (! not_null(cmdname) || cmdname.length === 0) {
+            copycmds = cmdpaths.slice();
+            retkey = copycmds.splice(-1).keycls;
+            return retkey;
+        }
+        sarr = cmdname.split('.');
+        copysarr = sarr.slice();
+        copysarr.splice(-1).subcommands.forEach(function(c) {
+            if (c.cmdname === sarr[0]) {
+                copycmds = cmdpaths.slice();
+                copycmds.push(c);
+                return self.__get_cmdkey(copysarr.splice(1).join('.'),copycmds);
+            }
+        });
+        return null;
+    };
+
+    self.get_subcommands = function(cmdname) {
+        self.__set_command_line_self_args();
+        return self.__get_subcommands(cmdname);
+    };
+
+    self.get_cmdkey = function(cmdname) {
+        self.__set_command_line_self_args();
+        return self.__get_cmdkey(cmdname);
+    };
+
+    self.__sort_cmdopts = function(retopts) {
+        if (not_null(retopts)) {
+            var normalopts = [];
+            var argsopt = null;
+            var idx;
+            var jdx;
+            retopts.forEach(function(curopt) {
+                if (curopt.typename !== 'args') {
+                    normalopts.push(curopt);
+                }
+            });
+            idx = 0;
+            while(idx < normalopts.length) {
+                jdx = idx + 1;
+                while ( jdx < normalopts.length) {
+                    
+                }
+            }
+        }
     };
 
     self.load_command_line_boolean = function (prefix, keycls, curparser) {
