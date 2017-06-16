@@ -2431,10 +2431,52 @@ function NewExtArgsParse(option) {
             while(idx < normalopts.length) {
                 jdx = idx + 1;
                 while ( jdx < normalopts.length) {
-                    
+                    if (normalopts[jdx].optdest < normalopts[idx].optdest) {
+                        var tmpopt = normalopts[jdx];
+                        normalopts[jdx] = normalopts[idx];
+                        normalopts[idx] = tmpopt;
+                    }
+                    jdx += 1;
                 }
+                idx += 1;
             }
+
+            if (not_null(argsopt)) {
+                retopts.push(argsopt);
+            }
+            retopts = retopts.concat(normalopts);
         }
+        return retopts;
+    };
+
+    self.__get_cmdopts = function(cmdname, cmdpaths) {
+        var retopts = null;
+        var copycmds;
+        var sarr;
+        var copysarr;
+        if (! not_null(cmdpaths)) {
+            cmdpaths = [dict.maincmd];
+        }
+
+        if (! not_null(cmdname) || cmdname.length === 0)  {
+            copycmds = cmdpaths.slice();
+            retopts = copycmds.splice(-1).cmdopts;
+            return self.__sort_cmdopts(retopts);
+        }
+        sarr = cmdname.split('.');
+        copycmds = cmdpaths.slice();
+        copycmds.splice(-1).subcommands.forEach(function(curcmd) {
+            if (curcmd.cmdname === sarr[0]) {
+                cmdpaths.push(curcmd);
+                return self.__get_cmdopts(copycmds.splice(1).join('.'), cmdpaths);
+            }
+        });
+        return null;
+    };
+
+    self.get_cmdopts = function(cmdname) {
+        self.__set_command_line_self_args();
+        return self.__get_cmdopts(cmdname);
     };
 
     self.load_command_line_boolean = function (prefix, keycls, curparser) {
