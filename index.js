@@ -4,6 +4,13 @@ var fs = require('fs');
 var assert = require('assert');
 var stacktrace = require('stack-trace');
 
+var not_null = function (v) {
+    if (v === undefined || v === null) {
+        return false;
+    }
+    return true;
+};
+
 var call_args_function = function (funcname, context, ...args) {
     var pkgname;
     var fname;
@@ -69,26 +76,21 @@ var set_property_value = function (self, name, value) {
     return added;
 };
 
-var set_property_max = function (self, name,dictobj) {
+var set_property_max = function (dictobj, name) {
     'use strict';
-    var hasproperties;
-    var added = 0;
-    hasproperties = Object.getOwnPropertyNames(self);
-    if (hasproperties.indexOf(name) < 0) {
-        Object.defineProperty(self, name, {
-            enumerable: true,
-            get: function () {
-                return dictobj[name];
-            },
-            set: function (v) {
-                if (dictobj[name] < v) {
-                    dictobj[name] = v;
-                }
+    dictobj[name] = 0;
+    Object.defineProperty(dictobj, name, {
+        enumerable: true,
+        get: function () {
+            return dictobj[name];
+        },
+        set: function (v) {
+            if (dictobj[name] < v) {
+                dictobj[name] = v;
             }
-        });
-        added = 1;
-    }
-    return added;
+        }
+    });
+    return 1;
 };
 
 
@@ -128,7 +130,7 @@ var format_length = function (s, len) {
 function LoggerObject(cmdname) {
     var self = {};
     var envname ;
-    if (cmdname === undefined || cmdname === null) {
+    if (!not_null(cmdname)) {
         cmdname = 'extargsparse';
     }
 
@@ -150,63 +152,45 @@ function LoggerObject(cmdname) {
                 format_length(stktr[callstack].getLineNumber(), 5));
         }
         retstr += msg;
-        return retstr;
+        return retstr + '\n';
+    };
+
+    self.__inner_output = function( msg , needlevel, callbastack) {
+        if (self.loglevel >= needlevel)  {
+            if (!not_null(callbastack)) {
+                callstack = 2;
+            } else {
+                callbastack += 1;
+            }
+            process.stderr.write(self.format_call_message(msg,callstack));
+        }
+        return ;
+
     };
 
     self.info = function (msg , callstack) {
-        if (self.loglevel >= 2)  {
-            var retmsg = '';
-            if (callstack === undefined) {
-                callstack = 1;
-            }
-            retmsg = self.format_call_message(msg,callstack);
-            process.stderr.write(retmsg + '\n');
-        }
-        return ;
+        self.__inner_output(msg , 2 , callbastack);
+        return;
     };
 
     self.warn = function(msg , callbastack) {
-        if (self.loglevel >= 1) {
-            var retmsg = '';
-            if (callstack === undefined) {
-                callstack = 1;
-            }
-            retmsg = self.format_call_message(msg,callstack);
-            process.stderr.write(retmsg + '\n');
-        }
+        self.__inner_output(msg, 1, callbastack);
+        return;
     };
 
     self.error = function(msg , callstack) {
-        if (self.loglevel >= 0) {
-            var retmsg = '';
-            if (callstack === undefined) {
-                callstack = 1;
-            }
-            retmsg = self.format_call_message(msg,callstack);
-            process.stderr.write(retmsg + '\n');
-        }
+        self.__inner_output(msg, 0, callbastack);
+        return;
     };
 
     self.debug = function(msg, callstack) {
-        if (self.loglevel >= 3) {
-            var retmsg = '';
-            if (callstack === undefined) {
-                callstack = 1;
-            }
-            retmsg = self.format_call_message(msg,callstack);
-            process.stderr.write(retmsg + '\n');
-        }
+        self.__inner_output(msg, 3, callbastack);
+        return;
     };
 
     self.debug = function(msg, callstack) {
-        if (self.loglevel >= 4) {
-            var retmsg = '';
-            if (callstack === undefined) {
-                callstack = 1;
-            }
-            retmsg = self.format_call_message(msg,callstack);
-            process.stderr.write(retmsg + '\n');
-        }
+        self.__inner_output(msg, 4, callbastack);
+        return;
     };
 
     return self;
@@ -247,18 +231,12 @@ function ExtArgsOption(setting) {
 
 function HelpSize() {
     var self = LoggerObject();
-    var dict = {};
-    dict.optnamesize = 0;
-    dict.optexprsize = 0;
-    dict.opthelpsize = 0;
-    dict.cmdnamesize = 0;
-    dict.cmdhelpsize = 0;
 
-    set_property_max(self,'optnamesize',dict);
-    set_property_max(self,'optexprsize',dict);
-    set_property_max(self,'opthelpsize',dict);
-    set_property_max(self,'cmdnamesize',dict);
-    set_property_max(self,'cmdhelpsize',dict);
+    set_property_max(self, 'optnamesize');
+    set_property_max(self, 'optexprsize');
+    set_property_max(self, 'opthelpsize');
+    set_property_max(self, 'cmdnamesize');
+    set_property_max(self, 'cmdhelpsize');
 
     self.format() = function () {
         var str = '';
@@ -267,7 +245,7 @@ function HelpSize() {
             if (str.length > 1) {
                 str += ',';
             }
-            str += util.format('%s=%s', k, dict[k]);
+            str += util.format('%s=%s', k, self[k]);
         });
         str += '}';
         return str;
@@ -276,12 +254,6 @@ function HelpSize() {
     return self;
 }
 
-var not_null = function (v) {
-    if (v === undefined || v === null) {
-        return false;
-    }
-    return true;
-};
 
 function ParserCompat(keycls,opt) {
     'use strict';
@@ -1508,7 +1480,7 @@ function NewExtArgsParse(option) {
     self.__call_json_value = function(args, keycls, value) {
         accessed[keycls.optdest] = true;
         if (not_null(keycls.attr) && not_null(keycls.attr.jsonfunc)) {
-            call_args_function(keycls.attr.jsonfunc,  args, keycls, value);
+            call_args_function(keycls.attr.jsonfunc, null ,args, keycls, value);
             return;
         }
         dict.set_json_value[keycls.typename](args,  keycls,  value);
@@ -2248,7 +2220,7 @@ function NewExtArgsParse(option) {
     self.__call_opt_method = function(args, validx, keycls, params) {
         var nargs;
         if (not_null(keycls.attr) && not_null(keycls.attr.optparse)) {
-            nargs = call_args_function(keycls.attr.optparse, args, validx, keycls, params);
+            nargs = call_args_function(keycls.attr.optparse, null, args, validx, keycls, params);
             /*to set accessed*/
             accessed[keycls.optdest] = true;
         } else {
@@ -2334,7 +2306,7 @@ function NewExtArgsParse(option) {
                     getmode = dict.output_mode[idx];
                 }
                 if (not_null(funcname) && ! not_null(getmode)) {
-                    call_args_function(funcname, args, Context);
+                    call_args_function(funcname, null, args, Context);
                     return args;
                 }
             }
@@ -3413,7 +3385,7 @@ function NewExtArgsParse(option) {
             if (curparser) {
                 keycls = curparser.cmdkeycls;
                 if (keycls.function !== null) {
-                    call_args_function(keycls.function, context, self.args);
+                    call_args_function(keycls.function, null, context, self.args);
                 }
             }
         }
