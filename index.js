@@ -447,6 +447,7 @@ function ParserCompat(keycls,opt) {
                 rets += curs + '\n';
             }
         }
+        curs = '';
         return rets;
     };
 
@@ -489,7 +490,7 @@ function ParserCompat(keycls,opt) {
                 });
             }
 
-            retstr += util.format('%s', self.cmdname);
+            retstr += util.format(' %s', self.cmdname);
 
             if (self.cmdopts.length > 0) {
                 retstr += util.format(' [OPTIONS]');
