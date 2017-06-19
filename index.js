@@ -258,85 +258,12 @@ function HelpSize() {
 function ParserCompat(keycls,opt) {
     'use strict';
     var self = LoggerObject();
-    if (keycls === undefined) {
+    if (! not_null(keycls)) {
         keycls = null;
     }
-    if (opt === undefined) {
+    if (! not_null(opt)) {
         opt = null;
     }
-
-    if (keycls !== null) {
-        assert.equal(keycls.iscmd, true, 'keycls must be cmd');
-        self.keycls = keycls;
-        self.cmdname = keycls.cmdname;
-        self.cmdopts = [];
-        self.subcommands = [];
-        self.helpinfo = util.format('%s handler', self.cmdname);
-        if (not_null(keycls.helpinfo)) {
-            self.helpinfo = keycls.helpinfo;
-        }
-        self.callfunction = null;
-        if (not_null(keycls.function)) {
-            self.callfunction = keycls.function;
-        }
-    } else {
-        self.keycls = keyparse.KeyParser('','main',{}, false);
-        self.cmdname = '';
-        self.cmdopts = [];
-        self.subcommands = [];
-        self.helpinfo = null;
-        self.callfunction = null;
-    }
-
-    self.screenwidth = 80;
-    if (opt !== null && not_null(opt.screenwidth)) {
-        self.screenwidth = opt.screenwidth;
-    }
-    if (self.screenwidth < 40) {
-        self.screenwidth = 40;
-    }
-    self.epilog = null;
-    self.description = null;
-    self.prog = null;
-    self.usage = null;
-    self.version = null;
-
-    self.__get_cmd_cmdname = function (cls) {
-        var retstr = '';
-        if (not_null(cls.cmdname)) {
-            retstr += util.format('[%s]', cls.cmdname);
-        }
-        return retstr;
-    };
-
-    self.__get_cmd_helpinfo = function (cls) {
-        var retstr = '';
-        if (not_null(cls.helpinfo)) {
-            retstr += cls.helpinfo;
-        }
-        return retstr;
-    };
-
-    self.__get_opt_optname = function (optcmd) {
-        var optname = '';
-        optname = optcmd.longopt;
-        if (not_null(optcmd.shortopt)) {
-            optname += util.format('|%s', optcmd.shortopt);
-        }
-        return optname;
-    };
-
-    self.__get_opt_expr = function (optcmd) {
-        var optexpr = '';
-        if (optcmd.typename !== 'boolean' && 
-            optcmd.typename !== 'args' && 
-            optcmd.typename !== 'object' &&
-            optcmd.typename !== 'help') {
-            optexpr += optcmd.varname;
-            optexpr = optexpr.replace(/-/g, '_');
-        }
-        return optexpr;
-    };
 
     self.__get_opt_helpinfo = function (optcmd) {
         var opthelp = '';
@@ -376,6 +303,83 @@ function ParserCompat(keycls,opt) {
         return opthelp;
     };
 
+    self.__init_fn = function() {
+        if (keycls !== null) {
+            assert.equal(keycls.iscmd, true, 'keycls must be cmd');
+            self.keycls = keycls;
+            self.cmdname = keycls.cmdname;
+            self.cmdopts = [];
+            self.subcommands = [];
+            self.helpinfo = util.format('%s handler', self.cmdname);
+            if (not_null(keycls.helpinfo)) {
+                self.helpinfo = keycls.helpinfo;
+            }
+            self.callfunction = null;
+            if (not_null(keycls.function)) {
+                self.callfunction = keycls.function;
+            }
+        } else {
+            self.keycls = keyparse.KeyParser('','main',{}, false);
+            self.cmdname = '';
+            self.cmdopts = [];
+            self.subcommands = [];
+            self.helpinfo = null;
+            self.callfunction = null;
+        }
+        self.screenwidth = 80;
+        if (not_null(opt) && not_null(opt.screenwidth)) {
+            self.screenwidth = opt.screenwidth;
+        }
+        if (self.screenwidth < 40) {
+            self.screenwidth = 40;
+        }
+        self.epilog = null;
+        self.description = null;
+        self.prog = null;
+        self.usage = null;
+        self.version = null;
+        return self;
+    };
+
+
+    self.__get_cmd_cmdname = function (cls) {
+        var retstr = '';
+        if (not_null(cls.cmdname)) {
+            retstr += util.format('[%s]', cls.cmdname);
+        }
+        return retstr;
+    };
+
+    self.__get_cmd_helpinfo = function (cls) {
+        var retstr = '';
+        if (not_null(cls.helpinfo)) {
+            retstr += cls.helpinfo;
+        }
+        return retstr;
+    };
+
+    self.__get_opt_optname = function (optcmd) {
+        var optname = '';
+        optname = optcmd.longopt;
+        if (not_null(optcmd.shortopt)) {
+            optname += util.format('|%s', optcmd.shortopt);
+        }
+        return optname;
+    };
+
+    self.__get_opt_expr = function (optcmd) {
+        var optexpr = '';
+        if (optcmd.typename !== 'boolean' && 
+            optcmd.typename !== 'args' && 
+            optcmd.typename !== 'object' &&
+            optcmd.typename !== 'help') {
+            optexpr += optcmd.varname;
+            optexpr = optexpr.replace(/-/g, '_');
+        }
+        return optexpr;
+    };
+
+
     self.get_help_size = function (helpsize, recursive) {
         var cmdname ;
         var cmdhelp ;
@@ -384,19 +388,19 @@ function ParserCompat(keycls,opt) {
             helpsize = HelpSize();
         }
 
-        if (recursive === undefined) {
+        if (! not_null(recursive)) {
             recursive = 0;
         }
 
         cmdname = self.__get_cmd_cmdname(self);
         cmdhelp = self.__get_cmd_helpinfo(self);
-        helpsize.cmdnamesize = len(cmdname);
-        helpsize.cmdhelpsize = len(cmdhelp);
-        self.cmdopts.forEach( function (cmdopt) {
-            if (cmdopt.typename !== 'args') {
-                helpsize.optnamesize = len(self.__get_opt_optname(cmdopt));
-                helpsize.optexprsize = len(self.__get_opt_expr(cmdopt));
-                helpsize.opthelpsize = len(self.__get_opt_helpinfo(cmdopt));
+        helpsize.cmdnamesize = cmdname.length;
+        helpsize.cmdhelpsize = cmdhelp.length;
+        self.cmdopts.forEach( function (curopt) {
+            if (curopt.typename !== 'args') {
+                helpsize.optnamesize = self.__get_opt_optname(curopt).length + 1;
+                helpsize.optexprsize = self.__get_opt_expr(curopt).length + 1;
+                helpsize.opthelpsize = self.__get_opt_helpinfo(curopt).length + 1;
             }
         });
 
@@ -410,9 +414,9 @@ function ParserCompat(keycls,opt) {
             });
         }
 
-        self.subcommands.forEach( function( curcmd)) {
-            helpsize.cmdnamesize = len(curcmd.cmdname) + 2;
-            helpsize.cmdhelpsize = len(curcmd.helpinfo);
+        self.subcommands.forEach( function(curcmd)) {
+            helpsize.cmdnamesize = curcmd.cmdname.length + 2;
+            helpsize.cmdhelpsize = curcmd.helpinfo.length;
         }
         return helpsize;
     };
@@ -612,7 +616,7 @@ function ParserCompat(keycls,opt) {
         return retstr;
     };
 
-    return self;
+    return self.__init_fn();
 };
 
 
