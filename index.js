@@ -1006,6 +1006,11 @@ function OptCheck() {
         return self;
     };
 
+    self.__init_fn = function() {
+        self.__reset();
+        return self;
+    };
+
     self.get_longopt = function () {
         return dict.longopt;
     };
@@ -1050,7 +1055,7 @@ function OptCheck() {
         return false;
     };
 
-    return self.__reset();
+    return self.__init_fn();
 }
 
 function NewExtArgsParse(option) {
@@ -1099,20 +1104,17 @@ function NewExtArgsParse(option) {
     }
 
     self.__format_cmd_from_cmd_array = function (cmdarray) {
-        var formcmdname = '';
-        var idx;
-        var c;
+        var cmdname = '';
         if (! not_null(cmdarray)) {
-            return formcmdname;
+            return '';
         }
-        for (idx = 0;idx < cmdarray.length ;idx +=1){
-            c = cmdarray[idx];
-            if (formcmdname.length > 0) {
-                formcmdname += '.';
+        cmdarray.forEach(function(c) {
+            if (cmdname.length > 0) {
+                cmdname += '.';
             }
-            formcmdname += c.cmdname;
-        }
-        return formcmdname;
+            cmdname += c.cmdname;
+        });
+        return cmdname;
     };
 
     self.__need_args_error = function (args, validx, keycls, params) {
