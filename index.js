@@ -193,6 +193,23 @@ function LoggerObject(cmdname) {
         return;
     };
 
+    self.format_string = function(arr) {
+        var rets='';
+        if (Array.isArray(arr)) {
+            var idx = 0;
+            arr.forEach(function(elm) {
+                rets += util.format('[%d]%s\n', idx, elm);
+                idx += 1;
+            });
+        } else if (typeof arr === 'object') {
+            rets += util.inspect(arr,{
+                showHidden: true,
+                depth: null
+            });
+        }
+        return rets;
+    };
+
     return self;
 }
 
@@ -1061,48 +1078,11 @@ function OptCheck() {
 function NewExtArgsParse(option) {
     'use strict';
     var reserved_args = ['subcommand','subnargs','nargs','extargs','args'];
-    var parser = LoggerObject();
     var opt = option || {};
-    var self;
-    var errstr2;
+    var self = LoggerObject();
     var retparser;
 
     retparser = {};
-    parser.flags = [];
-    parser.help_func = null;
-    parser.subparsers = [];
-    parser.error = 0;
-    parser.keycls = null;
-    parser.tabwidth = 4;
-
-    if (process.argv.length > 1) {
-        parser.cmdname = process.argv[1];
-    } else {
-        parser.cmdname = process.argv[0];
-    }
-
-    self = parser;
-
-
-    parser.priority = [exports.SUB_COMMAND_JSON_SET, exports.COMMAND_JSON_SET, exports.ENVIRONMENT_SET, exports.ENV_SUB_COMMAND_JSON_SET, exports.ENV_COMMAND_JSON_SET];
-    if (opt.priority !== undefined && opt.priority !== null) {
-        opt.priority.forEach(function (elm, idx) {
-            if (parser.priority.indexOf(elm) < 0) {
-                errstr2 = util.format('[%d]elm (%s) not valid', idx, elm);
-                throw new Error(errstr2);
-            }
-        });
-        parser.priority = opt.priority;
-    }
-
-    if (typeof opt.help_func === 'function') {
-        parser.help_func = opt.help_func;
-    }
-
-    if (typeof opt.cmdname === 'string') {
-        parser.cmdname = opt.cmdname;
-    }
-
     self.__format_cmd_from_cmd_array = function (cmdarray) {
         var cmdname = '';
         if (! not_null(cmdarray)) {
@@ -1359,7 +1339,7 @@ function NewExtArgsParse(option) {
         return self.__check_flag_insert(keycls, curparser);
     };
 
-    self.__load_command_line_jsonfile = function(prefix, keycls, curparser) {
+    self.__load_command_line_jsonfile = function(keycls, curparser) {
         return self.__check_flag_insert(keycls, curparser);
     };
 
@@ -1368,10 +1348,13 @@ function NewExtArgsParse(option) {
         var key = util.format('%s##json input file to get the value set##', dict.jsonlong);
         var value = null;
         var keycls;
+        if (! not_null(curparser)) {
+            curparser = null;
+        }
         prefix = self.__format_cmd_from_cmd_array(curparser);
         prefix = prefix.replace('.','_');
         keycls = keyparse.KeyParser(prefix, key, value, true, false, true, dict.longprefix, dict.shortprefix);
-        return self.__load_command_line_jsonfile(prefix, keycls, curparser);
+        return self.__load_command_line_jsonfile(keycls, curparser);
     };
 
     self.__load_command_line_help_added = function(curparser) {
@@ -1389,9 +1372,31 @@ function NewExtArgsParse(option) {
         return self.__load_command_line_help(keycls, curparser);
     };
 
-    self.init_fn = function() {
+    self.init_fn = function() {        
+        if (process.argv.length > 1) {
+            dict.cmdname = process.argv[1];
+        } else {
+            dict.cmdname = process.argv[0];
+        }
+
+
+        dict.priority = [exports.SUB_COMMAND_JSON_SET, exports.COMMAND_JSON_SET, exports.ENVIRONMENT_SET, exports.ENV_SUB_COMMAND_JSON_SET, exports.ENV_COMMAND_JSON_SET];
+        if (not_null(opt.priority)) {
+            opt.priority.forEach(function (elm, idx) {
+                if (dict.priority.indexOf(elm) < 0) {
+                    throw new Error(util.format('[%d]elm (%s) not valid', idx, elm));
+                }
+            });
+            dict.priority = opt.priority;
+        }
+
+
+        if (typeof opt.cmdname === 'string') {
+            self.cmdname = opt.cmdname;
+        }
+
         dict.options = opt;
-        dict.maincmd = ParserCompat(None, opt);
+        dict.maincmd = ParserCompat(null, opt);
         dict.maincmd.prog = opt.prog;
         dict.maincmd.usage = opt.usage;
         dict.maincmd.description = opt.description;
@@ -1473,15 +1478,12 @@ function NewExtArgsParse(option) {
     self.__format_cmdname_path = function(curparser) {
         var curcmdname = '';
         if (not_null(curparser)) {
-            var c;
-            var idx;
-            for(idx=0;idx<curparser.length;idx+=1) {
-                c = curparser[idx];
+            curparser.forEach(function(curcmd) {
                 if (curcmdname.length > 0) {
                     curcmdname += '.';
                 }
-                curcmdname += c.cmdname;
-            }
+                curcmdname += curcmd.cmdname;
+            });
         }
         return curcmdname;
     };
@@ -1497,8 +1499,8 @@ function NewExtArgsParse(option) {
         if (not_null(dict.maincmd)) {
             commands.push(dict.maincmd);
         }
-
-        while(idx < sarr.length && not_null(cmdname) && cmdname.length > 0) {
+        idx = 0;
+        while(idx <= sarr.length && not_null(cmdname) && cmdname.length > 0) {
             if (idx !== 0) {
                 curcommand = self.__find_command_inner(sarr[(idx-1)],commands);
                 if (not_null(curcommand)) {
@@ -1515,67 +1517,74 @@ function NewExtArgsParse(option) {
         var sarr;
         var curroot;
         var nextparsers = [];
-        var c;
-        var idx;
+        var copyparser;
+        var copysarr;
+
         sarr = name.split('.');
         curroot = dict.maincmd;
         if (not_null(curparser)) {
             nextparsers = curparser;
-            curroot = curparser.splice(-1);
+            copyparser = curparser.slice();
+            curroot = copyparser.splice(-1);
         }
 
         if (sarr.length > 1) {
             nextparsers.push(curroot);
-            for (idx =0; idx < curroot.subcommands.length; idx += 1) {
-                c = curroot.subcommands[idx];
-                if (c.cmdname === sarr[0]) {
+            curroot.subcommands.forEach(function(curcmd) {
+                if (curcmd.cmdname === sarr[0]) {
                     nextparsers = [];
                     if (not_null(curparser)) {
                         nextparsers = curparser;
                     }
-                    nextparsers.push(c);
-                    return self.__find_command_inner(sarr.splice(1).join('.'), nextparsers);
+                    nextparsers.push(curcmd);
+                    copysarr = sarr.slice();
+                    return self.__find_command_inner(copysarr.splice(1).join('.'), nextparsers);
                 }
-            }
+            });
         } else {
-            for(idx = 0 ; idx < curroot.subcommands.length ; idx += 1) {
-                c = curroot.subcommands[idx];
-                if (c.cmdname === sarr[0]) {
-                    return c;
+            curroot.subcommands.forEach(function(curcmd) {
+                if (sarr.length > 0 && curcmd.cmdname === sarr[0]) {
+                    return curcmd;
                 }
-            }
+            });
         }
         return null;
     };
 
     self.__find_subparser_inner = function(cmdname, parentcmd) {
         var sarr;
-        var idx;
-        var c;
         var findcmd;
-        if (! not_null(cmdname) || cmdname === '') {
+        var copyname;
+        if (! not_null(parentcmd)) {
+            parentcmd = null;
+        }
+        if (! not_null(cmdname) || cmdname.length === 0) {
             return parentcmd;
         }
         if (! not_null(parentcmd)) {
             parentcmd = dict.maincmd;
         }
         sarr = cmdname.split('.');
-        for (idx =0; idx < parentcmd.subcommands.length ;idx += 1) {
-            c = parentcmd.subcommands[idx];
-            if (c.cmdname === sarr[0]) {
-                findcmd = self.__find_subparser_inner(sarr.splice(1).join('.'),c);
+        parentcmd.subcommands.forEach(function(curcmd) {
+            if (curcmd.cmdname === sarr[0]) {
+                copyname = sarr.slice();
+                findcmd = self.__find_subparser_inner(copyname.splice(1).join('.'), curcmd);
                 if (not_null(findcmd)) {
                     return findcmd;
                 }
             }
-        }
+        });
         return null;
     };
 
     self.__get_subparser_inner = function(keycls, curparser) {
+        if (! not_null(curparser)) {
+            curparser = null;
+        }
         var cmdname = '';
         var parentname = self.__format_cmdname_path(curparser);
         var cmdparser ;
+        var copyparser;
         cmdname += parentname;
         if (cmdname.length > 0) {
             cmdname += '.';
@@ -1589,12 +1598,19 @@ function NewExtArgsParse(option) {
         if (parentcmd.length === 0) {
             dict.maincmd.subcommands.push(cmdparser);
         } else {
-            curparser.splice(-1).subcommands.push(cmdparser);
+            copyparser = curparser.slice();
+            copyparser.splice(-1).subcommands.push(cmdparser);
         }
         return cmdparser;
     };
 
     self.__load_command_subparser = function(prefix, keycls, lastparser) {
+        if (! not_null(lastparser)) {
+            lastparser = null;
+        }
+        if (typeof keycls.value !== 'object') {
+            self.error_msg(util.format('(%s) value must be dict', keycls.origkey));
+        }
         var parserinner = null;
         var nextparsers = [];
         var newprefix = '';
