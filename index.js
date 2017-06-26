@@ -629,69 +629,64 @@ function ParseState(args,maincmd,optattr) {
         optattr = ExtArgsOption();
     }
 
-    dict.cmdpaths = [maincmd];
-    dict.curidx = 0;
-    dict.curcharidx = -1;
-    dict.shortcharargs = -1;
-    dict.longargs = -1;
-    dict.keyidx = -1;
-    dict.validx = -1;
-    dict.args = args;
-    dict.ended = 0;
-    dict.longprefix = optattr.longprefix;
-    dict.shortprefix = optattr.shortprefix;
-    dict.leftargs = [];
+    self.__init_fn = function() {
+        dict.cmdpaths = [maincmd];
+        dict.curidx = 0;
+        dict.curcharidx = -1;
+        dict.shortcharargs = -1;
+        dict.longargs = -1;
+        dict.keyidx = -1;
+        dict.validx = -1;
+        dict.args = args;
+        dict.ended = 0;
+        dict.longprefix = optattr.longprefix;
+        dict.shortprefix = optattr.shortprefix;
+        dict.leftargs = [];
+        if ((dict.shortprefix === null || dict.longprefix === null ||
+            dict.shortprefix !== dict.longprefix)) {
+            dict.bundlemode = true;
+        } else {
+            dict.bundlemode = false;
+        }
+        dict.parseall = optattr.parseall;
+        dict.leftargs = [];
+        return self;
+    };
 
-    if ((dict.shortprefix === null || dict.longprefix === null ||
-        dict.shortprefix !== dict.longprefix)) {
-        dict.bundlemode = true;
-    } else {
-        dict.bundlemode = false;
-    }
+
 
     self.format_cmdname_path = function (curparser) {
         var cmdname = '';
-        var idx;
-        if (curparser === undefined) {
+        if (! not_null(curparser)) {
             curparser = null;
         }
-        if (curparser === null) {
-            cmdname = dict.cmdpaths;
-        } else {
-            for (idx = 0;idx < curparser.length ;idx += 1) {
-                var c;
-                c = curparser[idx];
-                if (cmdname.length > 0) {
-                    cmdname += '.';
-                }
-                cmdname += c.cmdname;
+        if (! not_null(curparser)) {
+            curparser = dict.cmdpaths;
+        } 
+        curparser.forEach(function(curcmd) {
+            if (cmdname.length > 0) {
+                cmdname += '.';
             }
-        }
+            cmdname += curcmd.cmdname;
+        });
         return cmdname;
     };
 
     self.__find_sub_command = function (name) {
-        var idx = dict.cmdpaths.length;
-        if (idx > 0) {
-            var cmdparent = dict.cmdpaths[(idx-1)];
-            var jdx;
-            for (jdx = 0;jdx < cmdparent.subcommands.length; jdx += 1) {
-                var curcmd = cmdparent.subcommands[jdx];
-                if (curcmd === name) {
-                    dict.cmdpaths.push(curcmd);
-                    return curcmd.keycls;
-                }
+        var copycmdpaths = dict.cmdpaths.slice();
+        copycmdpaths.splice(-1).forEach(function(curcmd) {
+            if (curcmd.cmdname === name ) {
+                dict.cmdpaths.push(curcmd);
+                return curcmd.keycls;
             }
-        }
+        });
         return null;
     };
 
     self.add_parse_args = function (nargs) {
         if (dict.curcharidx >= 0) {
             if (nargs > 0 && dict.shortcharargs > 0) {
-                var errstr;
-                errstr = util.format('[%s] already set args', dict.args[dict.curidx]);
-                throw new Error(errstr);
+                throw new Error(util.format('[%s] already set args', dict.args[dict.curidx]));
             }
             if (dict.shortcharargs < 0) {
                 dict.shortcharargs = 0;
@@ -699,16 +694,16 @@ function ParseState(args,maincmd,optattr) {
             dict.shortcharargs += nargs;
         } else {
             if (dict.longargs > 0) {
-                var errstr;
-                errstr = util.format('[%s] already set args', dict.args[dict.curidx]);
-                throw new Error(errstr);
+                throw new Error(util.format('[%s] already set args', dict.args[dict.curidx]));
             }
 
             if (dict.longargs < 0) {
                 dict.longargs = 0;
             }
             dict.longargs += nargs;
+            self.info(util.format('longargs [%d] nargs[%d]', dict.longargs,nargs));
         }
+        return;
     };
 
     self.__find_key_cls = function () {
@@ -718,9 +713,9 @@ function ParseState(args,maincmd,optattr) {
         var curch;
         var idx;
         var curcmd;
-        var curopt;
-        var jdx;
         var curarg;
+        var copyargs;
+        var keycls;
         if (dict.ended > 0) {
             return null;
         }
@@ -766,28 +761,20 @@ function ParseState(args,maincmd,optattr) {
             idx = dict.cmdpaths.length - 1;
             while ( idx  >= 0) {
                 curcmd = dict.cmdpaths[idx];
-                curopt ;
-                jdx;
-                for (jdx = 0;jdx < curcmd.cmdopts.length; jdx += 1) {
-                    curopt = curcmd.cmdopts[jdx];
-                    if (!curopt.isflag) {
-                        continue;
-                    }
-                    if (curopt.flagname === '$') {
-                        continue;
-                    }
-
-                    if (! not_null(curopt.shortflag)) {
+                curcmd.cmdopts.forEach(function(curopt) {
+                    if (curopt.isflag &&
+                        curopt.flagname !== '$' &&
+                        not_null(curopt.shortflag)) {
                         if (curopt.shortflag === curch) {
                             dict.keyidx = oldidx;
                             dict.validx = (oldidx + 1);
                             dict.curidx = oldidx;
                             dict.curcharidx = (oldcharidx + 1);
-                            self.info(util.format('%s validx[%d]', curopt.format(), dict.validx))
+                            self.info(util.format('%s validx [%s]', curopt.format() ,dict.validx));
                             return curopt;
                         }
                     }
-                }
+                });
                 idx -= 1;
             }
             throw new Error(util.format('can not parse (%s)', dict.args[oldidx]));
@@ -804,36 +791,31 @@ function ParseState(args,maincmd,optattr) {
                         dict.longargs = -1;
                         dict.ended = 1;
                         if (dict.args.length > dict.curidx) {
-                            dict.leftargs = dict.leftargs.concat(dict.args.splice(dict.curidx));
+                            copyargs = dict.args.slice();
+                            dict.leftargs = dict.leftargs.concat(copyargs.splice(dict.curidx));
                         }
                         return null;
                     }
                     idx = dict.cmdpaths.length - 1;
                     while (idx >= 0) {
                         curcmd = dict.cmdpaths[idx];
-                        for (jdx = 0; jdx < curcmd.cmdopts.length ; jdx += 1) {
-                            curopt = curcmd.cmdopts[jdx];
-                            if (! curopt.isflag) {
-                                continue;
+                        curcmd.cmdopts.forEach(function(curopt) {
+                            if (curopt.isflag && 
+                                curopt.flagname !== '$') {
+                                self.info(util.format('[%d]longopt %s curarg %s', idx, curopt.longopt, curarg));
+                                if (curopt.longopt === curarg) {
+                                    dict.keyidx = oldidx;
+                                    oldidx += 1;
+                                    dict.validx = oldidx;
+                                    dict.shortcharargs = -1;
+                                    dict.longargs = -1;
+                                    self.info(util.format('oldidx %d (len %d)', oldidx, dict.args.length));
+                                    dict.curidx = oldidx;
+                                    dict.curcharidx = -1;
+                                    return curopt;
+                                }
                             }
-                            if (curopt.flagname === '$') {
-                                continue;
-                            }
-
-                            self.info(util.format('[%d]longopt %s curarg %s', idx, curopt.longopt, curarg));
-                            if (curopt.longopt === curarg) {
-                                dict.keyidx = oldidx;
-                                oldidx += 1;
-                                dict.validx = oldidx;
-                                dict.shortcharargs = -1;
-                                dict.longargs = -1;
-                                self.info(util.format('oldidx %d (len %d)', oldidx, dict.args.length));
-                                dict.curidx = oldidx;
-                                dict.curcharidx = -1;
-                                return curopt;
-
-                            }
-                        }
+                        });
                         idx -= 1;
                     }
                     throw new Error(util.format('can not parse [%s]', dict.args[oldidx]));
@@ -851,7 +833,8 @@ function ParseState(args,maincmd,optattr) {
                             return self.__find_key_cls();
                         } else {
                             dict.ended = 1;
-                            dict.leftargs = dict.leftargs.concat(dict.args.splice(oldidx));
+                            copyargs = dict.args.slice();
+                            dict.leftargs = dict.leftargs.concat(copyargs.splice(oldidx));
                             dict.validx = oldidx;
                             dict.keyidx = -1;
                             dict.curidx = oldidx;
@@ -872,103 +855,95 @@ function ParseState(args,maincmd,optattr) {
                 curarg = dict.args[oldidx];
                 while (idx >= 0) {
                     curcmd = dict.cmdpaths[idx];
-                    for (jdx = 0;jdx < curcmd.cmdopts.length ;jdx += 1) {
-                        curopt = curcmd.cmdopts[jdx];
-                        if (!curopt.isflag) {
-                            continue;
+                    curcmd.cmdopts.forEach(function(curopt) {
+                        if (curopt.isflag && 
+                            curopt.flagname !== '$') {
+                            self.info(util.format('[%d](%s) curarg [%s]', idx, curopt.longopt, curarg));
+                            if (curopt.longopt === curarg) {
+                                dict.keyidx = oldidx;
+                                dict.validx = (oldidx + 1);
+                                dict.shortcharargs = -1;
+                                dict.longargs = -1;
+                                self.info(util.format('oldidx %d (len %d)', oldidx, dict.args.length));
+                                dict.curidx = (oldidx + 1);
+                                dict.curcharidx = -1;
+                                return curopt;
+                            }
                         }
-                        if (curopt.flagname === '$') {
-                            continue;
-                        }
-                        self.info(util.format('[%d](%s) curarg [%s]', idx, curopt.longopt,curarg));
-                        if (curopt.longopt === curarg) {
-                            dict.keyidx = oldidx;
-                            dict.validx = (oldidx + 1);
-                            dict.shortcharargs = -1;
-                            dict.longargs = -1;
-                            self.info(util.format('oldidx %d (len %d)', oldidx, dict.args.length));
-                            dict.curidx = (oldidx + 1);
-                            dict.curcharidx = -1;
-                            return curopt;
-                        }
-                    }
+                    });
                     idx -= 1;
                 }
 
                 idx = dict.cmdpaths.length - 1;
                 while (idx >= 0) {
                     curcmd = dict.cmdpaths[idx];
-                    for (jdx = 0; jdx < curcmd.cmdopts.length ; jdx += 1) {
-                        curopt = curcmd.cmdopts[jdx];
-                        if (!curopt.isflag) {
-                            continue;
+                    curcmd.cmdopts.forEach(function(curopt) {
+                        if (curopt.isflag &&
+                            curopt.flagname !== '$') {
+                            if (not_null(curopt.shortopt) && curopt.shortopt === curarg) {
+                                dict.keyidx = oldidx;
+                                dict.validx = (oldidx + 1);
+                                dict.shortcharargs = -1;
+                                dict.longargs = -1;
+                                self.info(util.format('oldidx %d (len %d)', oldidx, dict.args.length));
+                                dict.curidx = oldidx;
+                                dict.curcharidx = curopt.shortopt.length;
+                                self.info('[%s]shortopt (%s)', oldidx, curopt.shortopt);
+                                return curopt;
+                            }
                         }
-                        if (curopt.flagname === '$') {
-                            continue;
-                        }
-                        self.info(util.format('[%d](%s) curarg [%s]', idx, curopt.shortopt,curarg));
-                        if (not_null(curopt.shortopt) && curopt.shortopt === curarg)  {
-                            dict.keyidx = oldidx;
-                            dict.validx = (oldidx + 1);
-                            dict.shortcharargs = -1;
-                            dict.longargs = -1;
-                            self.info(util.format('oldidx %d (len %d)', oldidx, dict.args.length));
-                            dict.curidx = oldidx;
-                            dict.curcharidx = curopt.shortopt.length;
-                            self.info(util.format('[%s]shortopt (%s)', oldidx, curopt.shortopt));
-                            return curopt;
-                        }
-                    }
+                    });
                     idx -= 1;
-                }
-
-                /*it maybe the sub command ,so find it*/
-                curopt = self.__find_sub_command(dict.args[oldidx]);
-                if (curopt !== null) {
-                    self.info(util.format('find %s', dict.args[oldidx]));
-                    dict.keyidx = oldidx;
-                    dict.curidx = (oldidx  + 1);
-                    dict.validx = (oldidx + 1);
-                    dict.curcharidx = -1;
-                    dict.shortcharargs = -1;
-                    dict.longargs = -1;
-                    return curopt;
-                }
-
-                /*now no thing to find ,suppose it is args ,so handle it when 
-                  parse all or not*/
-                if (dict.parseall) {
-                    dict.leftargs.push(dict.args[oldidx]);
-                    oldidx += 1;
-                    dict.keyidx = -1;
-                    dict.validx = oldidx;
-                    dict.curidx = oldidx;
-                    dict.curcharidx = -1;
-                    dict.shortcharargs = -1;
-                    dict.longargs = -1;
-                    return self.__find_key_cls();
-                } else {
-                    dict.ended = 1;
-                    dict.leftargs = dict.leftargs.concat(dict.args.splice(oldidx));
-                    dict.keyidx = -1;
-                    dict.curidx = oldidx;
-                    dict.curcharidx = -1;
-                    dict.shortcharargs = -1;
-                    dict.longargs = -1;
-                    return null;
                 }
             }
         }
+
+        /*come here because we may be the command*/
+        keycls = self.__find_sub_command(dict.args[oldidx]);
+        if (! not_null(keycls)) {
+            self.info(util.format('find %s', dict.args[oldidx]));
+            dict.keycidx = oldidx;
+            dict.curidx = (oldidx + 1);
+            dict.validx = (oldidx + 1);
+            dict.curcharidx = -1;
+            dict.shortcharargs = -1;
+            dict.longargs = -1;
+            return keycls;
+        }
+
+        if (not_null(dict.parseall) &&
+            dict.parseall) {
+            dict.leftargs.push(dict.args[oldidx]);
+            oldidx += 1;
+            dict.keyidx = -1;
+            dict.validx = oldidx;
+            dict.curidx = oldidx;
+            dict.curcharidx = -1;
+            dict.shortcharargs = -1;
+            dict.longargs = -1;
+            return self.__find_key_cls();
+        } 
+        /* this is over */
+        dict.ended = 1;
+        copyargs = dict.args.slice();
+        dict.leftargs = dict.leftargs.concat(copyargs.splice(oldidx));
+        dict.keycidx = -1;
+        dict.curidx = oldidx;
+        dict.curcharidx = -1;
+        dict.shortcharargs = -1;
+        dict.longargs = -1;
+        return null;
     };
 
     self.step_one = function () {
         var curopt = null;
-        if (dict.ended) {
+        if (dict.ended > 0) {
+            dict.optval = dict.leftargs;
             return null;
         }
-
         curopt = self.__find_key_cls();
         if (curopt === null) {
+            dict.optval = dict.leftargs;
             return null;
         }
 
