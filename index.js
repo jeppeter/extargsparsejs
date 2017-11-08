@@ -775,29 +775,29 @@ function ParseState(args, maincmd, optattr) {
     };
 
     self.add_parse_args = function (nargs) {
-        if (dict.curcharidx >= 0) {
-            if (nargs > 0 && dict.shortcharargs > 0) {
-                throw new Error(util.format('[%s] already set args', dict.args[dict.curidx]));
+        if (innerself.curcharidx >= 0) {
+            if (nargs > 0 && innerself.shortcharargs > 0) {
+                throw new Error(util.format('[%s] already set args', innerself.args[innerself.curidx]));
             }
-            if (dict.shortcharargs < 0) {
-                dict.shortcharargs = 0;
+            if (innerself.shortcharargs < 0) {
+                innerself.shortcharargs = 0;
             }
-            dict.shortcharargs += nargs;
+            innerself.shortcharargs += nargs;
         } else {
-            if (dict.longargs > 0) {
-                throw new Error(util.format('[%s] already set args', dict.args[dict.curidx]));
+            if (innerself.longargs > 0) {
+                throw new Error(util.format('[%s] already set args', innerself.args[innerself.curidx]));
             }
 
-            if (dict.longargs < 0) {
-                dict.longargs = 0;
+            if (innerself.longargs < 0) {
+                innerself.longargs = 0;
             }
-            dict.longargs += nargs;
-            self.info(util.format('longargs [%d] nargs[%d]', dict.longargs, nargs));
+            innerself.longargs += nargs;
+            self.info(util.format('longargs [%d] nargs[%d]', innerself.longargs, nargs));
         }
         return;
     };
 
-    self.inner_find_key_cls = function () {
+    innerself.inner_find_key_cls = function () {
         var c;
         var oldcharidx;
         var oldidx;
@@ -809,60 +809,60 @@ function ParseState(args, maincmd, optattr) {
         var keycls;
         var curopt;
         var jdx;
-        if (dict.ended > 0) {
+        if (innerself.ended > 0) {
             return null;
         }
 
-        if (dict.longargs >= 0) {
-            assert.ok(dict.curcharidx < 0, util.format('curcharidx[%d] < 0', dict.curcharidx));
-            dict.curidx += dict.longargs;
-            dict.longargs = -1;
-            dict.validx = -1;
-            dict.keyidx = -1;
+        if (innerself.longargs >= 0) {
+            assert.ok(innerself.curcharidx < 0, util.format('curcharidx[%d] < 0', innerself.curcharidx));
+            innerself.curidx += innerself.longargs;
+            innerself.longargs = -1;
+            innerself.validx = -1;
+            innerself.keyidx = -1;
         }
-        oldcharidx = dict.curcharidx;
-        oldidx = dict.curidx;
-        if (oldidx >= dict.args.length) {
-            dict.curidx = oldidx;
-            dict.curcharidx = -1;
-            dict.shortcharargs = -1;
-            dict.longargs = -1;
-            dict.keyidx = -1;
-            dict.validx = -1;
-            dict.ended = 1;
+        oldcharidx = innerself.curcharidx;
+        oldidx = innerself.curidx;
+        if (oldidx >= innerself.args.length) {
+            innerself.curidx = oldidx;
+            innerself.curcharidx = -1;
+            innerself.shortcharargs = -1;
+            innerself.longargs = -1;
+            innerself.keyidx = -1;
+            innerself.validx = -1;
+            innerself.ended = 1;
             return null;
         }
         if (oldcharidx >= 0) {
-            c = dict.args[oldidx];
+            c = innerself.args[oldidx];
             if (c.length <= oldcharidx) {
                 oldidx += 1;
                 self.info(util.format('oldidx [%d]', oldidx));
-                if (dict.shortcharargs > 0) {
-                    oldidx += dict.shortcharargs;
+                if (innerself.shortcharargs > 0) {
+                    oldidx += innerself.shortcharargs;
                 }
-                self.info(util.format('oldidx [%d] shortcharargs [%d]', oldidx, dict.shortcharargs));
-                dict.curidx = oldidx;
-                dict.curcharidx = -1;
-                dict.shortcharargs = -1;
-                dict.keyidx = -1;
-                dict.validx = -1;
-                dict.longargs = -1;
-                return self.inner_find_key_cls();
+                self.info(util.format('oldidx [%d] shortcharargs [%d]', oldidx, innerself.shortcharargs));
+                innerself.curidx = oldidx;
+                innerself.curcharidx = -1;
+                innerself.shortcharargs = -1;
+                innerself.keyidx = -1;
+                innerself.validx = -1;
+                innerself.longargs = -1;
+                return innerself.inner_find_key_cls();
             }
             curch = c[oldcharidx];
             self.info(util.format('argv[%d][%d] %s', oldidx, oldcharidx, curch));
-            idx = dict.cmdpaths.length - 1;
+            idx = innerself.cmdpaths.length - 1;
             while (idx >= 0) {
-                curcmd = dict.cmdpaths[idx];
+                curcmd = innerself.cmdpaths[idx];
                 for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                     curopt = curcmd.cmdopts[jdx];
                     if (curopt.isflag && curopt.flagname !== '$' && not_null(curopt.shortflag)) {
                         if (curopt.shortflag === curch) {
-                            dict.keyidx = oldidx;
-                            dict.validx = (oldidx + 1);
-                            dict.curidx = oldidx;
-                            dict.curcharidx = (oldcharidx + 1);
-                            self.info(util.format('%s validx [%s]', curopt.format(), dict.validx));
+                            innerself.keyidx = oldidx;
+                            innerself.validx = (oldidx + 1);
+                            innerself.curidx = oldidx;
+                            innerself.curcharidx = (oldcharidx + 1);
+                            self.info(util.format('%s validx [%s]', curopt.format(), innerself.validx));
                             return curopt;
                         }
                     }
@@ -870,42 +870,42 @@ function ParseState(args, maincmd, optattr) {
                 idx -= 1;
             }
             if (true) {
-                throw new Error(util.format('can not parse (%s)', dict.args[oldidx]));
+                throw new Error(util.format('can not parse (%s)', innerself.args[oldidx]));
             }
         } else {
-            if (dict.bundlemode) {
-                curarg = dict.args[oldidx];
-                if (curarg.startsWith(dict.longprefix)) {
-                    if (curarg === dict.longprefix) {
-                        dict.keyidx = -1;
-                        dict.curidx = (oldidx + 1);
-                        dict.curcharidx = -1;
-                        dict.validx = (oldidx + 1);
-                        dict.shortcharargs = -1;
-                        dict.longargs = -1;
-                        dict.ended = 1;
-                        if (dict.args.length > dict.curidx) {
-                            copyargs = dict.args.slice();
-                            dict.leftargs = dict.leftargs.concat(copyargs.splice(dict.curidx));
+            if (innerself.bundlemode) {
+                curarg = innerself.args[oldidx];
+                if (curarg.startsWith(innerself.longprefix)) {
+                    if (curarg === innerself.longprefix) {
+                        innerself.keyidx = -1;
+                        innerself.curidx = (oldidx + 1);
+                        innerself.curcharidx = -1;
+                        innerself.validx = (oldidx + 1);
+                        innerself.shortcharargs = -1;
+                        innerself.longargs = -1;
+                        innerself.ended = 1;
+                        if (innerself.args.length > innerself.curidx) {
+                            copyargs = innerself.args.slice();
+                            innerself.leftargs = innerself.leftargs.concat(copyargs.splice(innerself.curidx));
                         }
                         return null;
                     }
-                    idx = dict.cmdpaths.length - 1;
+                    idx = innerself.cmdpaths.length - 1;
                     while (idx >= 0) {
-                        curcmd = dict.cmdpaths[idx];
+                        curcmd = innerself.cmdpaths[idx];
                         for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                             curopt = curcmd.cmdopts[jdx];
                             if (curopt.isflag && curopt.flagname !== '$') {
                                 self.info(util.format('[%d]longopt %s curarg %s', idx, curopt.longopt, curarg));
                                 if (curopt.longopt === curarg) {
-                                    dict.keyidx = oldidx;
+                                    innerself.keyidx = oldidx;
                                     oldidx += 1;
-                                    dict.validx = oldidx;
-                                    dict.shortcharargs = -1;
-                                    dict.longargs = -1;
-                                    self.info(util.format('oldidx %d (len %d)', oldidx, dict.args.length));
-                                    dict.curidx = oldidx;
-                                    dict.curcharidx = -1;
+                                    innerself.validx = oldidx;
+                                    innerself.shortcharargs = -1;
+                                    innerself.longargs = -1;
+                                    self.info(util.format('oldidx %d (len %d)', oldidx, innerself.args.length));
+                                    innerself.curidx = oldidx;
+                                    innerself.curcharidx = -1;
                                     return curopt;
                                 }
                             }
@@ -913,56 +913,56 @@ function ParseState(args, maincmd, optattr) {
                         idx -= 1;
                     }
                     if (true) {
-                        throw new Error(util.format('can not parse [%s]', dict.args[oldidx]));
+                        throw new Error(util.format('can not parse [%s]', innerself.args[oldidx]));
                     }
-                } else if (curarg.startsWith(dict.shortprefix)) {
-                    if (curarg === dict.shortprefix) {
-                        if (dict.parseall) {
-                            dict.leftargs.push(curarg);
+                } else if (curarg.startsWith(innerself.shortprefix)) {
+                    if (curarg === innerself.shortprefix) {
+                        if (innerself.parseall) {
+                            innerself.leftargs.push(curarg);
                             oldidx += 1;
-                            dict.curidx = oldidx;
-                            dict.curcharidx = -1;
-                            dict.longargs = -1;
-                            dict.shortcharargs = -1;
-                            dict.keyidx = -1;
-                            dict.validx = -1;
-                            return self.inner_find_key_cls();
+                            innerself.curidx = oldidx;
+                            innerself.curcharidx = -1;
+                            innerself.longargs = -1;
+                            innerself.shortcharargs = -1;
+                            innerself.keyidx = -1;
+                            innerself.validx = -1;
+                            return innerself.inner_find_key_cls();
                         } else {
-                            dict.ended = 1;
-                            copyargs = dict.args.slice();
-                            dict.leftargs = dict.leftargs.concat(copyargs.splice(oldidx));
-                            dict.validx = oldidx;
-                            dict.keyidx = -1;
-                            dict.curidx = oldidx;
-                            dict.curcharidx = -1;
-                            dict.shortcharargs = -1;
-                            dict.longargs = -1;
+                            innerself.ended = 1;
+                            copyargs = innerself.args.slice();
+                            innerself.leftargs = innerself.leftargs.concat(copyargs.splice(oldidx));
+                            innerself.validx = oldidx;
+                            innerself.keyidx = -1;
+                            innerself.curidx = oldidx;
+                            innerself.curcharidx = -1;
+                            innerself.shortcharargs = -1;
+                            innerself.longargs = -1;
                             return null;
                         }
                     }
-                    oldcharidx = dict.shortprefix.length;
-                    dict.curidx = oldidx;
-                    dict.curcharidx = oldcharidx;
-                    return self.inner_find_key_cls();
+                    oldcharidx = innerself.shortprefix.length;
+                    innerself.curidx = oldidx;
+                    innerself.curcharidx = oldcharidx;
+                    return innerself.inner_find_key_cls();
                 }
             } else {
                 /* not bundle mode */
-                idx = dict.cmdpaths.length - 1;
-                curarg = dict.args[oldidx];
+                idx = innerself.cmdpaths.length - 1;
+                curarg = innerself.args[oldidx];
                 while (idx >= 0) {
-                    curcmd = dict.cmdpaths[idx];
+                    curcmd = innerself.cmdpaths[idx];
                     for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                         curopt = curcmd.cmdopts[jdx];
                         if (curopt.isflag && curopt.flagname !== '$') {
                             self.info(util.format('[%d](%s) curarg [%s]', idx, curopt.longopt, curarg));
                             if (curopt.longopt === curarg) {
-                                dict.keyidx = oldidx;
-                                dict.validx = (oldidx + 1);
-                                dict.shortcharargs = -1;
-                                dict.longargs = -1;
-                                self.info(util.format('oldidx %d (len %d)', oldidx, dict.args.length));
-                                dict.curidx = (oldidx + 1);
-                                dict.curcharidx = -1;
+                                innerself.keyidx = oldidx;
+                                innerself.validx = (oldidx + 1);
+                                innerself.shortcharargs = -1;
+                                innerself.longargs = -1;
+                                self.info(util.format('oldidx %d (len %d)', oldidx, innerself.args.length));
+                                innerself.curidx = (oldidx + 1);
+                                innerself.curcharidx = -1;
                                 return curopt;
                             }
                         }
@@ -970,20 +970,20 @@ function ParseState(args, maincmd, optattr) {
                     idx -= 1;
                 }
 
-                idx = dict.cmdpaths.length - 1;
+                idx = innerself.cmdpaths.length - 1;
                 while (idx >= 0) {
-                    curcmd = dict.cmdpaths[idx];
+                    curcmd = innerself.cmdpaths[idx];
                     for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                         curopt = curcmd.cmdopts[jdx];
                         if (curopt.isflag && curopt.flagname !== '$') {
                             if (not_null(curopt.shortopt) && curopt.shortopt === curarg) {
-                                dict.keyidx = oldidx;
-                                dict.validx = (oldidx + 1);
-                                dict.shortcharargs = -1;
-                                dict.longargs = -1;
-                                self.info(util.format('oldidx %d (len %d)', oldidx, dict.args.length));
-                                dict.curidx = oldidx;
-                                dict.curcharidx = curopt.shortopt.length;
+                                innerself.keyidx = oldidx;
+                                innerself.validx = (oldidx + 1);
+                                innerself.shortcharargs = -1;
+                                innerself.longargs = -1;
+                                self.info(util.format('oldidx %d (len %d)', oldidx, innerself.args.length));
+                                innerself.curidx = oldidx;
+                                innerself.curcharidx = curopt.shortopt.length;
                                 self.info('[%s]shortopt (%s)', oldidx, curopt.shortopt);
                                 return curopt;
                             }
@@ -995,19 +995,19 @@ function ParseState(args, maincmd, optattr) {
         }
 
         /*come here because we may be the command*/
-        keycls = self.inner_find_sub_command(dict.args[oldidx]);
+        keycls = innerself.inner_find_sub_command(innerself.args[oldidx]);
         if (!not_null(keycls)) {
-            self.info(util.format('find %s', dict.args[oldidx]));
-            dict.keycidx = oldidx;
-            dict.curidx = (oldidx + 1);
-            dict.validx = (oldidx + 1);
-            dict.curcharidx = -1;
-            dict.shortcharargs = -1;
-            dict.longargs = -1;
+            self.info(util.format('find %s', innerself.args[oldidx]));
+            innerself.keycidx = oldidx;
+            innerself.curidx = (oldidx + 1);
+            innerself.validx = (oldidx + 1);
+            innerself.curcharidx = -1;
+            innerself.shortcharargs = -1;
+            innerself.longargs = -1;
             return keycls;
         }
 
-        if (not_null(dict.parseall) && dict.parseall) {
+        if (not_null(innerself.parseall) && dict.parseall) {
             dict.leftargs.push(dict.args[oldidx]);
             oldidx += 1;
             dict.keyidx = -1;
