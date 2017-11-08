@@ -1175,7 +1175,6 @@ function ExtArgsParse(option) {
     var reserved_args = ['subcommand', 'subnargs', 'nargs', 'extargs', 'args'];
     var opt = option || {};
     var self = new LoggerObject();
-    var retparser = {};
     var accessed = {};
     var innerself = {};
 
@@ -1445,55 +1444,55 @@ function ExtArgsParse(option) {
         return innerself.inner_check_flag_insert(keycls, curparser);
     };
 
-    self.inner_load_command_line_jsonfile = function (keycls, curparser) {
-        return self.inner_check_flag_insert(keycls, curparser);
+    innerself.inner_load_command_line_jsonfile = function (keycls, curparser) {
+        return innerself.inner_check_flag_insert(keycls, curparser);
     };
 
-    self.inner_load_command_line_json_added = function (curparser) {
+    innerself.inner_load_command_line_json_added = function (curparser) {
         var prefix = '';
-        var key = util.format('%s##json input file to get the value set##', retparser.jsonlong);
+        var key = util.format('%s##json input file to get the value set##', innerself.jsonlong);
         var value = null;
         var keycls;
         if (!not_null(curparser)) {
             curparser = null;
         }
-        prefix = self.inner_format_cmd_from_cmd_array(curparser);
+        prefix = innerself.inner_format_cmd_from_cmd_array(curparser);
         prefix = prefix.replace('.', '_');
-        keycls = keyparse.KeyParser(prefix, key, value, true, false, true, retparser.longprefix, retparser.shortprefix);
-        return self.inner_load_command_line_jsonfile(keycls, curparser);
+        keycls = keyparse.KeyParser(prefix, key, value, true, false, true, innerself.longprefix, innerself.shortprefix);
+        return innerself.inner_load_command_line_jsonfile(keycls, curparser);
     };
 
-    self.inner_load_command_line_help_added = function (curparser) {
+    innerself.inner_load_command_line_help_added = function (curparser) {
         if (!not_null(curparser)) {
             curparser = null;
         }
-        var key = util.format('%s', retparser.helplong);
+        var key = util.format('%s', innerself.helplong);
         var value = null;
         var keycls;
-        if (not_null(retparser.helpshort)) {
-            key += util.format('|%s', retparser.helpshort);
+        if (not_null(innerself.helpshort)) {
+            key += util.format('|%s', innerself.helpshort);
         }
         key += '##to display this help information##';
-        keycls = keyparse.KeyParser('', key, value, true, true, false, retparser.longprefix, retparser.shortprefix);
-        return self.inner_load_command_line_help(keycls, curparser);
+        keycls = keyparse.KeyParser('', key, value, true, true, false, innerself.longprefix, innerself.shortprefix);
+        return innerself.inner_load_command_line_help(keycls, curparser);
     };
 
-    self.init_fn = function () {
+    innerself.init_fn = function () {
         if (process.argv.length > 1) {
-            retparser.cmdname = process.argv[1];
+            innerself.cmdname = process.argv[1];
         } else {
-            retparser.cmdname = process.argv[0];
+            innerself.cmdname = process.argv[0];
         }
 
 
-        retparser.priority = [exports.SUB_COMMAND_JSON_SET, exports.COMMAND_JSON_SET, exports.ENVIRONMENT_SET, exports.ENV_SUB_COMMAND_JSON_SET, exports.ENV_COMMAND_JSON_SET];
+        innerself.priority = [exports.SUB_COMMAND_JSON_SET, exports.COMMAND_JSON_SET, exports.ENVIRONMENT_SET, exports.ENV_SUB_COMMAND_JSON_SET, exports.ENV_COMMAND_JSON_SET];
         if (not_null(opt.priority)) {
             opt.priority.forEach(function (elm, idx) {
-                if (retparser.priority.indexOf(elm) < 0) {
+                if (innerself.priority.indexOf(elm) < 0) {
                     throw new Error(util.format('[%d]elm (%s) not valid', idx, elm));
                 }
             });
-            retparser.priority = opt.priority;
+            innerself.priority = opt.priority;
         }
 
 
@@ -1501,87 +1500,88 @@ function ExtArgsParse(option) {
             self.cmdname = opt.cmdname;
         }
 
-        retparser.options = opt;
-        retparser.maincmd = new ParserCompat(null, opt);
-        retparser.maincmd.prog = opt.prog;
-        retparser.maincmd.usage = opt.usage;
-        retparser.maincmd.description = opt.description;
-        retparser.maincmd.epilog = opt.epilog;
-        retparser.maincmd.version = opt.version;
-        retparser.error_handler = opt.errorhandler;
-        retparser.help_handler = opt.helphandler;
-        retparser.output_mode = [];
-        retparser.ended = 0;
-        retparser.longprefix = opt.longprefix;
-        retparser.shortprefix = opt.shortprefix;
-        retparser.nohelpoption = opt.nohelpoption;
-        retparser.nojsonoption = opt.nojsonoption;
-        retparser.helplong = opt.helplong;
-        retparser.helpshort = opt.helpshort;
-        retparser.jsonlong = opt.jsonlong;
-        retparser.cmdprefixadded = opt.cmdprefixadded;
-        retparser.load_command_map = {
-            string: self.inner_load_command_line_base,
-            unicode: self.inner_load_command_line_base,
-            int: self.inner_load_command_line_base,
-            long: self.inner_load_command_line_base,
-            float: self.inner_load_command_line_base,
-            list: self.inner_load_command_line_base,
-            boolean: self.inner_load_command_line_base,
-            args: self.inner_load_command_line_args,
-            command: self.inner_load_command_subparser,
-            prefix: self.inner_load_command_prefix,
-            help: self.inner_load_command_line_base,
-            jsonfile: self.inner_load_command_line_base
+        innerself.options = opt;
+        innerself.maincmd = new ParserCompat(null, opt);
+        innerself.maincmd.prog = opt.prog;
+        innerself.maincmd.usage = opt.usage;
+        innerself.maincmd.description = opt.description;
+        innerself.maincmd.epilog = opt.epilog;
+        innerself.maincmd.version = opt.version;
+        innerself.error_handler = opt.errorhandler;
+        innerself.help_handler = opt.helphandler;
+        innerself.output_mode = [];
+        innerself.ended = 0;
+        innerself.longprefix = opt.longprefix;
+        innerself.shortprefix = opt.shortprefix;
+        innerself.nohelpoption = opt.nohelpoption;
+        innerself.nojsonoption = opt.nojsonoption;
+        innerself.helplong = opt.helplong;
+        innerself.helpshort = opt.helpshort;
+        innerself.jsonlong = opt.jsonlong;
+        innerself.cmdprefixadded = opt.cmdprefixadded;
+        innerself.load_command_map = {
+            string: innerself.inner_load_command_line_base,
+            unicode: innerself.inner_load_command_line_base,
+            int: innerself.inner_load_command_line_base,
+            long: innerself.inner_load_command_line_base,
+            float: innerself.inner_load_command_line_base,
+            array: innerself.inner_load_command_line_base,
+            boolean: innerself.inner_load_command_line_base,
+            args: innerself.inner_load_command_line_args,
+            command: innerself.inner_load_command_subparser,
+            prefix: innerself.inner_load_command_prefix,
+            count: innerself.inner_load_command_base,
+            help: innerself.inner_load_command_line_base,
+            jsonfile: innerself.inner_load_command_line_base
         };
-        retparser.opt_parse_handle_map = {
-            string: self.inner_string_action,
-            unicode: self.inner_string_action,
-            boolean: self.inner_bool_action,
-            int: self.inner_int_action,
-            long: self.inner_int_action,
-            list: self.inner_append_action,
-            count: self.inner_inc_action,
-            help: self.inner_help_action,
-            jsonfile: self.inner_jsonfile_action,
-            command: self.inner_command_action,
-            float: self.innner_float_action
+        innerself.opt_parse_handle_map = {
+            string: innerself.inner_string_action,
+            unicode: innerself.inner_string_action,
+            boolean: innerself.inner_bool_action,
+            int: innerself.inner_int_action,
+            long: innerself.inner_int_action,
+            array: innerself.inner_append_action,
+            count: innerself.inner_inc_action,
+            help: innerself.inner_help_action,
+            jsonfile: innerself.inner_jsonfile_action,
+            command: innerself.inner_command_action,
+            float: innerself.innner_float_action
         };
-        retparser.load_priority = opt.priority;
-        retparser.parse_set_map = {
-            SUB_COMMAND_JSON_SET: self.inner_parse_sub_command_json_set,
-            COMMAND_JSON_SET: self.inner_parse_command_json_set,
-            ENVIRONMENT_SET: self.inner_parse_environment_set,
-            ENV_SUB_COMMAND_JSON_SET: self.inner_parse_env_subcommand_json_set,
-            ENV_COMMAND_JSON_SET: self.inner_parse_env_command_json_set
+        innerself.load_priority = opt.priority;
+        innerself.parse_set_map = {
+            SUB_COMMAND_JSON_SET: innerself.inner_parse_sub_command_json_set,
+            COMMAND_JSON_SET: innerself.inner_parse_command_json_set,
+            ENVIRONMENT_SET: innerself.inner_parse_environment_set,
+            ENV_SUB_COMMAND_JSON_SET: innerself.inner_parse_env_subcommand_json_set,
+            ENV_COMMAND_JSON_SET: innerself.inner_parse_env_command_json_set
         };
-        retparser.set_json_value = {
-            string: self.inner_json_value_base,
-            unicode: self.inner_json_value_base,
-            boolean: self.inner_json_value_base,
-            int: self.inner_json_value_base,
-            long: self.inner_json_value_base,
-            list: self.inner_json_value_base,
-            count: self.inner_json_value_base,
-            jsonfile: self.inner_json_value_base,
-            float: self.inner_json_value_base,
-            command: self.inner_json_value_error,
-            help: self.inner_json_value_error
+        innerself.set_json_value = {
+            string: innerself.inner_json_value_base,
+            unicode: innerself.inner_json_value_base,
+            boolean: innerself.inner_json_value_base,
+            int: innerself.inner_json_value_base,
+            long: innerself.inner_json_value_base,
+            array: innerself.inner_json_value_base,
+            count: innerself.inner_json_value_base,
+            jsonfile: innerself.inner_json_value_base,
+            float: innerself.inner_json_value_base,
+            command: innerself.inner_json_value_error,
+            help: innerself.inner_json_value_error
         };
         return self;
     };
 
-    self.inner_call_json_value = function (args, keycls, value) {
+    innerself.inner_call_json_value = function (args, keycls, value) {
         accessed[keycls.optdest] = true;
         if (not_null(keycls.attr) && not_null(keycls.attr.jsonfunc)) {
-            call_args_function(keycls.attr.jsonfunc, null, args, keycls, value);
+            self.call_func(keycls.attr.jsonfunc, null, args, keycls, value);
             return;
         }
-        retparser.set_json_value[keycls.typename](args, keycls, value);
+        innerself.set_json_value[keycls.typename](args, keycls, value);
         return;
     };
 
-    self.inner_format_cmdname_path = function (curparser) {
+    innerself.inner_format_cmdname_path = function (curparser) {
         var curcmdname = '';
         if (not_null(curparser)) {
             curparser.forEach(function (curcmd) {
@@ -1594,7 +1594,7 @@ function ExtArgsParse(option) {
         return curcmdname;
     };
 
-    self.inner_find_commands_in_path = function (cmdname, curparser) {
+    innerself.inner_find_commands_in_path = function (cmdname, curparser) {
         var sarr = [''];
         var commands = [];
         var idx = 0;
