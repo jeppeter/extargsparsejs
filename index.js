@@ -1007,59 +1007,67 @@ function ParseState(args, maincmd, optattr) {
             return keycls;
         }
 
-        if (not_null(innerself.parseall) && dict.parseall) {
-            dict.leftargs.push(dict.args[oldidx]);
+        if (not_null(innerself.parseall) && innerself.parseall) {
+            innerself.leftargs.push(innerself.args[oldidx]);
             oldidx += 1;
-            dict.keyidx = -1;
-            dict.validx = oldidx;
-            dict.curidx = oldidx;
-            dict.curcharidx = -1;
-            dict.shortcharargs = -1;
-            dict.longargs = -1;
-            return self.inner_find_key_cls();
+            innerself.keyidx = -1;
+            innerself.validx = oldidx;
+            innerself.curidx = oldidx;
+            innerself.curcharidx = -1;
+            innerself.shortcharargs = -1;
+            innerself.longargs = -1;
+            return innerself.inner_find_key_cls();
         }
         /* this is over */
-        dict.ended = 1;
-        copyargs = dict.args.slice();
-        dict.leftargs = dict.leftargs.concat(copyargs.splice(oldidx));
-        dict.keycidx = -1;
-        dict.curidx = oldidx;
-        dict.curcharidx = -1;
-        dict.shortcharargs = -1;
-        dict.longargs = -1;
+        innerself.ended = 1;
+        copyargs = innerself.args.slice();
+        innerself.leftargs = innerself.leftargs.concat(copyargs.splice(oldidx));
+        innerself.keycidx = -1;
+        innerself.curidx = oldidx;
+        innerself.curcharidx = -1;
+        innerself.shortcharargs = -1;
+        innerself.longargs = -1;
         return null;
     };
 
     self.step_one = function () {
         var curopt = null;
-        if (dict.ended > 0) {
-            dict.optval = dict.leftargs;
+        if (innerself.ended > 0) {
+            self.info(util.format('args %s __curidx %d', innerself.args, innerself.curidx));
+            innerself.optval = innerself.leftargs;
+            innerself.validx = innerself.curidx;
             return null;
         }
-        curopt = self.inner_find_key_cls();
-        if (curopt === null) {
-            dict.optval = dict.leftargs;
+        curopt = innerself.inner_find_key_cls();
+        if (!not_null(curopt)) {
+            assert.ok(innerself.ended > 0, util.format('not ended [%d] > 0', innerself.ended));
+            innerself.optval = innerself.leftargs;
+            innerself.validx = innerself.curidx;
             return null;
         }
 
         if (!curopt.iscmd) {
-            dict.optval = curopt.optdest;
+            innerself.optval = curopt.optdest;
         } else {
-            dict.optval = self.format_cmdname_path(dict.cmdpaths);
+            innerself.optval = self.format_cmdname_path(innerself.cmdpaths);
         }
         return curopt;
     };
 
     self.get_cmd_paths = function () {
-        return dict.cmdpaths;
+        return innerself.cmdpaths;
     };
 
     self.get_optval = function () {
-        return dict.optval;
+        return innerself.optval;
     };
 
     self.get_validx = function () {
-        return dict.validx;
+        return innerself.validx;
+    };
+
+    self.get_curidx = function () {
+        return innerself.curidx;
     };
 
     return self;
@@ -1072,6 +1080,7 @@ set_property_value(exports, 'ENVIRONMENT_SET', 'ENVIRONMENT_SET');
 set_property_value(exports, 'ENV_SUB_COMMAND_JSON_SET', 'ENV_SUB_COMMAND_JSON_SET');
 set_property_value(exports, 'ENV_COMMAND_JSON_SET', 'ENV_COMMAND_JSON_SET');
 set_property_value(exports, 'DEFAULT_SET', 'DEFAULT_SET');
+
 
 var set_attr_args = function (self, args, prefix) {
     'use strict';
