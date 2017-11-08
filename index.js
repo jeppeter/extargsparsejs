@@ -479,6 +479,7 @@ function ParserCompat(keycls, opt) {
         var opthelp;
         var cmdname;
         var cmdhelp;
+        var curstr;
         if (!not_null(helpsize)) {
             helpsize = null;
         }
@@ -549,21 +550,17 @@ function ParserCompat(keycls, opt) {
             retstr += '[OPTIONS]\n';
             self.cmdopts.forEach(function (curopt) {
                 if (curopt.typename !== 'args') {
-                    var curstr = '';
                     optname = self.inner_get_opt_optname(curopt);
                     optexpr = self.inner_get_opt_expr(curopt);
                     opthelp = self.inner_get_opt_helpinfo(curopt);
                     curstr += util.format('    ');
-                    curstr += util.format('%s %s %s\n', format_length(optname, helpsize.optnamesize),
-                        format_length(optexpr, helpsize.optexprsize),
-                        format_length(opthelp, helpsize.opthelpsize));
+                    curstr += util.format('%s %s %s\n', format_length(optname, helpsize.optnamesize), format_length(optexpr, helpsize.optexprsize), format_length(opthelp, helpsize.opthelpsize));
                     if (curstr.length < self.screenwidth) {
                         retstr += curstr;
                     } else {
                         curstr = '';
                         curstr += util.format('    ');
-                        curstr += util.format('%s %s', format_length(optname, helpsize.optnamesize),
-                            format_length(optexpr, helpsize.optexprsize));
+                        curstr += util.format('%s %s', format_length(optname, helpsize.optnamesize), format_length(optexpr, helpsize.optexprsize));
                         retstr += curstr + '\n';
                         if (self.screenwidth >= 60) {
                             retstr += self.inner_get_indent_string(opthelp, 20, self.screenwidth);
@@ -582,8 +579,7 @@ function ParserCompat(keycls, opt) {
                 cmdhelp = self.inner_get_cmd_helpinfo(curcmd);
                 curstr = '';
                 curstr += util.format('    ');
-                curstr += util.format('%s %s', format_length(cmdname, helpsize.cmdnamesize),
-                    format_length(cmdhelp, helpsize.cmdhelpsize));
+                curstr += util.format('%s %s', format_length(cmdname, helpsize.cmdnamesize), format_length(cmdhelp, helpsize.cmdhelpsize));
                 if (curstr.length < self.screenwidth) {
                     retstr += curstr + '\n';
                 } else {
@@ -662,8 +658,7 @@ function ParseState(args, maincmd, optattr) {
         dict.longprefix = optattr.longprefix;
         dict.shortprefix = optattr.shortprefix;
         dict.leftargs = [];
-        if (dict.shortprefix === null || dict.longprefix === null ||
-            dict.shortprefix !== dict.longprefix) {
+        if (dict.shortprefix === null || dict.longprefix === null || dict.shortprefix !== dict.longprefix) {
             dict.bundlemode = true;
         } else {
             dict.bundlemode = false;
@@ -785,9 +780,7 @@ function ParseState(args, maincmd, optattr) {
                 curcmd = dict.cmdpaths[idx];
                 for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                     curopt = curcmd.cmdopts[jdx];
-                    if (curopt.isflag &&
-                        curopt.flagname !== '$' &&
-                        not_null(curopt.shortflag)) {
+                    if (curopt.isflag && curopt.flagname !== '$' && not_null(curopt.shortflag)) {
                         if (curopt.shortflag === curch) {
                             dict.keyidx = oldidx;
                             dict.validx = (oldidx + 1);
@@ -826,8 +819,7 @@ function ParseState(args, maincmd, optattr) {
                         curcmd = dict.cmdpaths[idx];
                         for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                             curopt = curcmd.cmdopts[jdx];
-                            if (curopt.isflag &&
-                                curopt.flagname !== '$') {
+                            if (curopt.isflag && curopt.flagname !== '$') {
                                 self.info(util.format('[%d]longopt %s curarg %s', idx, curopt.longopt, curarg));
                                 if (curopt.longopt === curarg) {
                                     dict.keyidx = oldidx;
@@ -885,8 +877,7 @@ function ParseState(args, maincmd, optattr) {
                     curcmd = dict.cmdpaths[idx];
                     for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                         curopt = curcmd.cmdopts[jdx];
-                        if (curopt.isflag &&
-                            curopt.flagname !== '$') {
+                        if (curopt.isflag && curopt.flagname !== '$') {
                             self.info(util.format('[%d](%s) curarg [%s]', idx, curopt.longopt, curarg));
                             if (curopt.longopt === curarg) {
                                 dict.keyidx = oldidx;
@@ -908,8 +899,7 @@ function ParseState(args, maincmd, optattr) {
                     curcmd = dict.cmdpaths[idx];
                     for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                         curopt = curcmd.cmdopts[jdx];
-                        if (curopt.isflag &&
-                            curopt.flagname !== '$') {
+                        if (curopt.isflag && curopt.flagname !== '$') {
                             if (not_null(curopt.shortopt) && curopt.shortopt === curarg) {
                                 dict.keyidx = oldidx;
                                 dict.validx = (oldidx + 1);
@@ -941,8 +931,7 @@ function ParseState(args, maincmd, optattr) {
             return keycls;
         }
 
-        if (not_null(dict.parseall) &&
-            dict.parseall) {
+        if (not_null(dict.parseall) && dict.parseall) {
             dict.leftargs.push(dict.args[oldidx]);
             oldidx += 1;
             dict.keyidx = -1;
@@ -1008,7 +997,7 @@ set_property_value(exports, 'ENV_SUB_COMMAND_JSON_SET', 'ENV_SUB_COMMAND_JSON_SE
 set_property_value(exports, 'ENV_COMMAND_JSON_SET', 'ENV_COMMAND_JSON_SET');
 set_property_value(exports, 'DEFAULT_SET', 'DEFAULT_SET');
 
-function set_attr_args(self, args, prefix) {
+var set_attr_args = function (self, args, prefix) {
     'use strict';
     var keys = Object.keys(args);
     var idx;
@@ -1024,7 +1013,9 @@ function set_attr_args(self, args, prefix) {
         }
     }
     return;
-}
+};
+
+module.exports.set_attr_args = set_attr_args;
 
 function OptCheck() {
     'use strict';
@@ -1098,9 +1089,9 @@ function NewExtArgsParse(option) {
     var reserved_args = ['subcommand', 'subnargs', 'nargs', 'extargs', 'args'];
     var opt = option || {};
     var self = new LoggerObject();
-    var retparser;
+    var retparser = {};
+    var accessed = {};
 
-    retparser = {};
     self.inner_format_cmd_from_cmd_array = function (cmdarray) {
         var cmdname = '';
         if (!not_null(cmdarray)) {
@@ -1117,6 +1108,7 @@ function NewExtArgsParse(option) {
 
     self.inner_need_args_error = function (args, validx, keycls, params) {
         var keyval = '';
+        args = args;
         if (validx > 0) {
             keyval = params[(validx - 1)];
         }
@@ -1139,6 +1131,8 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_bool_action = function (args, validx, keycls, params) {
+        validx = validx;
+        params = params;
         if (keycls.value) {
             args[keycls.optdest] = false;
         } else {
@@ -1183,8 +1177,7 @@ function NewExtArgsParse(option) {
         }
         value = value.toLowerCase();
 
-        if ((!value.match('^[0-9a-f]+$') && base === 16) ||
-            (!value.match('^[0-9]+$') && base === 10)) {
+        if ((!value.match('^[0-9a-f]+$') && base === 16) || (!value.match('^[0-9]+$') && base === 10)) {
             self.error_msg(util.format('%s not valid int', params[validx]));
         }
 
@@ -1193,6 +1186,8 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_inc_action = function (args, validx, keycls, params) {
+        validx = validx;
+        params = params;
         if (!not_null(args[keycls.optdest])) {
             args[keycls.optdest] = 0;
         }
@@ -1212,12 +1207,19 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_help_action = function (args, validx, keycls, value) {
+        args = args;
+        validx = validx;
+        keycls = keycls;
         self.print_help(process.stdout, value);
         process.exit(0);
         return 0;
     };
 
     self.inner_command_action = function (args, validx, keycls, params) {
+        args = args;
+        validx = validx;
+        keycls = keycls;
+        params = params;
         return 0;
     };
 
@@ -1227,6 +1229,9 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_json_value_error = function (args, keycls, value) {
+        args = args;
+        keycls = keycls;
+        value = value;
         throw new Error('error set json value');
     };
 
@@ -1245,8 +1250,7 @@ function NewExtArgsParse(option) {
         var idx;
         for (idx = callstck; idx < stktr.length; idx += 1) {
             rets += format_length('', tabs * 4);
-            rets += util.format('[%d][%s:%s:%s]\n', idx, stktr[idx].getFileName(),
-                stktr[idx].getFunctionName(), stktr[idx].getLineNumber());
+            rets += util.format('[%d][%s:%s:%s]\n', idx, stktr[idx].getFileName(), stktr[idx].getFunctionName(), stktr[idx].getLineNumber());
         }
         return rets;
     };
@@ -1254,7 +1258,7 @@ function NewExtArgsParse(option) {
     self.error_msg = function (message) {
         var output = false;
         var outs = '';
-        var modes = dict.output_mode.slice();
+        var modes = retparser.output_mode.slice();
         if (modes.length > 0) {
             if (modes.splice(-1) === 'bash') {
                 outs = '';
@@ -1271,7 +1275,7 @@ function NewExtArgsParse(option) {
             outs += util.format('    %s', self.format_call_msg(message, 2));
         }
 
-        if (dict.error_handler === 'exit') {
+        if (retparser.error_handler === 'exit') {
             process.stderr.write(outs);
             process.exit(3);
             return;
@@ -1284,31 +1288,25 @@ function NewExtArgsParse(option) {
             curparser = null;
         }
         var lastparser;
-        var idx;
-        var curopt;
         var copyparser;
 
         if (not_null(curparser)) {
             copyparser = curparser.slice();
             lastparser = copyparser.splice(-1);
         } else {
-            lastparser = dict.maincmd;
+            lastparser = retparser.maincmd;
         }
 
         lastparser.cmdopts.forEach(function (curopt) {
-            if (curopt.isflag && curopt.flagname !== '$' &&
-                keycls.flagname !== '$') {
-                if (curopt.typename !== 'help' &&
-                    keycls.typename !== 'help') {
+            if (curopt.isflag && curopt.flagname !== '$' && keycls.flagname !== '$') {
+                if (curopt.typename !== 'help' && keycls.typename !== 'help') {
                     if (curopt.optdest === keycls.optdest) {
                         return false;
                     }
-                } else if (curopt.typename === 'help' &&
-                    keycls.typename === 'help') {
+                } else if (curopt.typename === 'help' && keycls.typename === 'help') {
                     return false;
                 }
-            } else if (curopt.isflag && curopt.flagname === '$' &&
-                keycls.flagname === '$') {
+            } else if (curopt.isflag && curopt.flagname === '$' && keycls.flagname === '$') {
                 return false;
             }
         });
@@ -1329,17 +1327,17 @@ function NewExtArgsParse(option) {
                     curcmdname += curcmd.cmdname;
                 });
             }
-            self.error_msg(util.format('(%s) already in command(%s)', keycls.flagname, cmdname));
+            self.error_msg(util.format('(%s) already in command(%s)', keycls.flagname, curcmdname));
         }
         return inserted;
     };
 
     self.inner_load_command_line_base = function (prefix, keycls, curparser) {
+        prefix = prefix;
         if (!not_null(curparser)) {
             curparser = null;
         }
-        if (keycls.isflag && keycls.flagname !== '$' &&
-            reserved_args.indexOf(keycls.flagname)) {
+        if (keycls.isflag && keycls.flagname !== '$' && reserved_args.indexOf(keycls.flagname)) {
             self.error_msg(util.format('(%s) in reserved_args (%s)', keycls.flagname, reserved_args));
         }
         self.inner_check_flag_insert_mustsucc(keycls, curparser);
@@ -1348,10 +1346,12 @@ function NewExtArgsParse(option) {
 
 
     self.inner_load_command_line_args = function (prefix, keycls, curparser) {
+        prefix = prefix;
         return self.inner_check_flag_insert(keycls, curparser);
     };
 
     self.inner_load_command_line_help = function (prefix, keycls, curparser) {
+        prefix = prefix;
         return self.inner_check_flag_insert(keycls, curparser);
     };
 
@@ -1361,7 +1361,7 @@ function NewExtArgsParse(option) {
 
     self.inner_load_command_line_json_added = function (curparser) {
         var prefix = '';
-        var key = util.format('%s##json input file to get the value set##', dict.jsonlong);
+        var key = util.format('%s##json input file to get the value set##', retparser.jsonlong);
         var value = null;
         var keycls;
         if (!not_null(curparser)) {
@@ -1369,7 +1369,7 @@ function NewExtArgsParse(option) {
         }
         prefix = self.inner_format_cmd_from_cmd_array(curparser);
         prefix = prefix.replace('.', '_');
-        keycls = keyparse.KeyParser(prefix, key, value, true, false, true, dict.longprefix, dict.shortprefix);
+        keycls = keyparse.KeyParser(prefix, key, value, true, false, true, retparser.longprefix, retparser.shortprefix);
         return self.inner_load_command_line_jsonfile(keycls, curparser);
     };
 
@@ -1377,33 +1377,33 @@ function NewExtArgsParse(option) {
         if (!not_null(curparser)) {
             curparser = null;
         }
-        var key = util.format('%s', dict.helplong);
+        var key = util.format('%s', retparser.helplong);
         var value = null;
         var keycls;
-        if (not_null(dict.helpshort)) {
-            key += util.format('|%s', dict.helpshort);
+        if (not_null(retparser.helpshort)) {
+            key += util.format('|%s', retparser.helpshort);
         }
         key += '##to display this help information##';
-        keycls = keyparse.KeyParser('', key, value, true, true, false, dict.longprefix, dict.shortprefix);
+        keycls = keyparse.KeyParser('', key, value, true, true, false, retparser.longprefix, retparser.shortprefix);
         return self.inner_load_command_line_help(keycls, curparser);
     };
 
     self.init_fn = function () {
         if (process.argv.length > 1) {
-            dict.cmdname = process.argv[1];
+            retparser.cmdname = process.argv[1];
         } else {
-            dict.cmdname = process.argv[0];
+            retparser.cmdname = process.argv[0];
         }
 
 
-        dict.priority = [exports.SUB_COMMAND_JSON_SET, exports.COMMAND_JSON_SET, exports.ENVIRONMENT_SET, exports.ENV_SUB_COMMAND_JSON_SET, exports.ENV_COMMAND_JSON_SET];
+        retparser.priority = [exports.SUB_COMMAND_JSON_SET, exports.COMMAND_JSON_SET, exports.ENVIRONMENT_SET, exports.ENV_SUB_COMMAND_JSON_SET, exports.ENV_COMMAND_JSON_SET];
         if (not_null(opt.priority)) {
             opt.priority.forEach(function (elm, idx) {
-                if (dict.priority.indexOf(elm) < 0) {
+                if (retparser.priority.indexOf(elm) < 0) {
                     throw new Error(util.format('[%d]elm (%s) not valid', idx, elm));
                 }
             });
-            dict.priority = opt.priority;
+            retparser.priority = opt.priority;
         }
 
 
@@ -1411,26 +1411,26 @@ function NewExtArgsParse(option) {
             self.cmdname = opt.cmdname;
         }
 
-        dict.options = opt;
-        dict.maincmd = new ParserCompat(null, opt);
-        dict.maincmd.prog = opt.prog;
-        dict.maincmd.usage = opt.usage;
-        dict.maincmd.description = opt.description;
-        dict.maincmd.epilog = opt.epilog;
-        dict.maincmd.version = opt.version;
-        dict.error_handler = opt.errorhandler;
-        dict.help_handler = opt.helphandler;
-        dict.output_mode = [];
-        dict.ended = 0;
-        dict.longprefix = opt.longprefix;
-        dict.shortprefix = opt.shortprefix;
-        dict.nohelpoption = opt.nohelpoption;
-        dict.nojsonoption = opt.nojsonoption;
-        dict.helplong = opt.helplong;
-        dict.helpshort = opt.helpshort;
-        dict.jsonlong = opt.jsonlong;
-        dict.cmdprefixadded = opt.cmdprefixadded;
-        dict.load_command_map = {
+        retparser.options = opt;
+        retparser.maincmd = new ParserCompat(null, opt);
+        retparser.maincmd.prog = opt.prog;
+        retparser.maincmd.usage = opt.usage;
+        retparser.maincmd.description = opt.description;
+        retparser.maincmd.epilog = opt.epilog;
+        retparser.maincmd.version = opt.version;
+        retparser.error_handler = opt.errorhandler;
+        retparser.help_handler = opt.helphandler;
+        retparser.output_mode = [];
+        retparser.ended = 0;
+        retparser.longprefix = opt.longprefix;
+        retparser.shortprefix = opt.shortprefix;
+        retparser.nohelpoption = opt.nohelpoption;
+        retparser.nojsonoption = opt.nojsonoption;
+        retparser.helplong = opt.helplong;
+        retparser.helpshort = opt.helpshort;
+        retparser.jsonlong = opt.jsonlong;
+        retparser.cmdprefixadded = opt.cmdprefixadded;
+        retparser.load_command_map = {
             string: self.inner_load_command_line_base,
             unicode: self.inner_load_command_line_base,
             int: self.inner_load_command_line_base,
@@ -1444,7 +1444,7 @@ function NewExtArgsParse(option) {
             help: self.inner_load_command_line_base,
             jsonfile: self.inner_load_command_line_base
         };
-        dict.opt_parse_handle_map = {
+        retparser.opt_parse_handle_map = {
             string: self.inner_string_action,
             unicode: self.inner_string_action,
             boolean: self.inner_bool_action,
@@ -1457,15 +1457,15 @@ function NewExtArgsParse(option) {
             command: self.inner_command_action,
             float: self.innner_float_action
         };
-        dict.load_priority = opt.priority;
-        dict.parse_set_map = {
+        retparser.load_priority = opt.priority;
+        retparser.parse_set_map = {
             SUB_COMMAND_JSON_SET: self.inner_parse_sub_command_json_set,
             COMMAND_JSON_SET: self.inner_parse_command_json_set,
             ENVIRONMENT_SET: self.inner_parse_environment_set,
             ENV_SUB_COMMAND_JSON_SET: self.inner_parse_env_subcommand_json_set,
             ENV_COMMAND_JSON_SET: self.inner_parse_env_command_json_set
         };
-        dict.set_json_value = {
+        retparser.set_json_value = {
             string: self.inner_json_value_base,
             unicode: self.inner_json_value_base,
             boolean: self.inner_json_value_base,
@@ -1487,7 +1487,7 @@ function NewExtArgsParse(option) {
             call_args_function(keycls.attr.jsonfunc, null, args, keycls, value);
             return;
         }
-        dict.set_json_value[keycls.typename](args, keycls, value);
+        retparser.set_json_value[keycls.typename](args, keycls, value);
         return;
     };
 
@@ -1509,11 +1509,12 @@ function NewExtArgsParse(option) {
         var commands = [];
         var idx = 0;
         var curcommand;
+        curparser = curparser;
         if (not_null(cmdname)) {
             sarr = cmdname.split('.');
         }
-        if (not_null(dict.maincmd)) {
-            commands.push(dict.maincmd);
+        if (not_null(retparser.maincmd)) {
+            commands.push(retparser.maincmd);
         }
         idx = 0;
         while (idx <= sarr.length && not_null(cmdname) && cmdname.length > 0) {
@@ -1537,7 +1538,7 @@ function NewExtArgsParse(option) {
         var copysarr;
 
         sarr = name.split('.');
-        curroot = dict.maincmd;
+        curroot = retparser.maincmd;
         if (not_null(curparser)) {
             nextparsers = curparser;
             copyparser = curparser.slice();
@@ -1578,7 +1579,7 @@ function NewExtArgsParse(option) {
             return parentcmd;
         }
         if (!not_null(parentcmd)) {
-            parentcmd = dict.maincmd;
+            parentcmd = retparser.maincmd;
         }
         sarr = cmdname.split('.');
         parentcmd.subcommands.forEach(function (curcmd) {
@@ -1611,8 +1612,8 @@ function NewExtArgsParse(option) {
             return cmdparser;
         }
         cmdparser = new ParserCompat(keycls);
-        if (parentcmd.length === 0) {
-            dict.maincmd.subcommands.push(cmdparser);
+        if (parentname.length === 0) {
+            retparser.maincmd.subcommands.push(cmdparser);
         } else {
             copyparser = curparser.slice();
             copyparser.splice(-1).subcommands.push(cmdparser);
@@ -1634,15 +1635,15 @@ function NewExtArgsParse(option) {
             self.error_msg(util.format('command(%s) in reserved_args (%s)', keycls.cmdname, reserved_args));
         }
         parserinner = self.inner_get_subparser_inner(keycls, lastparser);
-        nextparsers = [dict.maincmd];
+        nextparsers = [retparser.maincmd];
         if (not_null(lastparser)) {
             nextparsers = lastparser;
         }
 
         nextparsers.push(parserinner);
-        self.info('nextparser %s', self.format_string(nextparser));
+        self.info('nextparser %s', self.format_string(nextparsers));
         self.info('keycls %s', keycls.format());
-        if (dict.cmdprefixadded) {
+        if (retparser.cmdprefixadded) {
             newprefix = prefix;
             if (newprefix.length > 0) {
                 newprefix += '.';
@@ -1655,6 +1656,7 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_load_command_prefix = function (prefix, keycls, curparser) {
+        prefix = prefix;
         if (reserved_args.indexOf(keycls.prefix) >= 0) {
             self.error_msg(util.format('prefix (%s) in reserved_args (%s)', keycls.prefix, reserved_args));
         }
@@ -1663,7 +1665,7 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_load_command_line_inner = function (prefix, d, curparser) {
-        var parentpath = [dict.maincmd];
+        var parentpath = [retparser.maincmd];
         var keys = Object.keys(d);
         var idx;
         var v;
@@ -1673,10 +1675,10 @@ function NewExtArgsParse(option) {
         if (!not_null(curparser)) {
             curparser = null;
         }
-        if (!dict.nojsonoption) {
+        if (!retparser.nojsonoption) {
             self.inner_load_command_line_json_added(curparser);
         }
-        if (!dict.nohelpoption) {
+        if (!retparser.nohelpoption) {
             self.inner_load_command_line_help_added(curparser);
         }
 
@@ -1688,8 +1690,8 @@ function NewExtArgsParse(option) {
             k = keys[idx];
             v = d[k];
             self.info(util.format('%s , %s , %s , True', prefix, k, v));
-            keycls = keyparse.KeyParser(prefix, k, v, false, false, false, dict.longprefix, dict.shortprefix, dict.flagnochange);
-            valid = dict.load_command_map[keycls.typename](prefix, keycls, parentpath);
+            keycls = keyparse.KeyParser(prefix, k, v, false, false, false, retparser.longprefix, retparser.shortprefix, retparser.flagnochange);
+            valid = retparser.load_command_map[keycls.typename](prefix, keycls, parentpath);
             if (!valid) {
                 self.error_msg(util.format('can not add (%s, %s)', k, v));
             }
@@ -1699,7 +1701,7 @@ function NewExtArgsParse(option) {
     };
 
     retparser.load_command_line = function (d) {
-        if (dict.ended !== 0) {
+        if (retparser.ended !== 0) {
             throw new Error(util.format('you have call parse_command_line before call load_command_line_string or load_command_line'));
         }
         if (typeof d !== 'object') {
@@ -1710,9 +1712,7 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_get_except_info = function (e) {
-        var idx = 1;
         var rets = '';
-        var stktr = stacktrace.get();
         rets += util.format('exception: %s\n', e);
         rets += 'trace back:\n';
         rets += self.inner_get_full_trace_back(2, 1, 0);
@@ -1731,13 +1731,13 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_print_help = function (cmdparser) {
-        if (not_null(dict.help_handler) && dict.help_handler === 'nohelp') {
+        if (not_null(retparser.help_handler) && retparser.help_handler === 'nohelp') {
             return 'no help information';
         }
         var curcmd;
         var cmdpaths = [];
         var idx;
-        curcmd = dict.maincmd;
+        curcmd = retparser.maincmd;
         if (not_null(cmdparser)) {
             self.info(util.format('cmdparser %s', self.format_string(cmdparser)));
             curcmd = cmdparser.splice(-1);
@@ -1761,8 +1761,7 @@ function NewExtArgsParse(option) {
         var paths;
         paths = self.inner_find_commands_in_path(cmdname);
         s = self.inner_print_help(paths);
-        if (not_null(dict.output_mode) && dict.output_mode.length > 0 &&
-            dict.output_mode.splice(-1) === 'bash') {
+        if (not_null(retparser.output_mode) && retparser.output_mode.length > 0 && retparser.output_mode.splice(-1) === 'bash') {
             var outs;
             outs = util.format('cat <<EOFMM\n%s\nEOFMM\nexit 0', s);
             process.stdout.write(outs);
@@ -1790,10 +1789,7 @@ function NewExtArgsParse(option) {
 
         for (idx = 0; idx < cmd.cmdopts.length; idx += 1) {
             curopt = cmd.cmdopts[idx];
-            if (curopt.isflag &&
-                curopt.typename !== 'prefix' &&
-                curopt.typename !== 'args' &&
-                curopt.typename !== 'help') {
+            if (curopt.isflag && curopt.typename !== 'prefix' && curopt.typename !== 'args' && curopt.typename !== 'help') {
                 if (curopt.optdest === key) {
                     if (!self.inner_get_args_accessed(key)) {
                         self.inner_call_json_value(args, key, value);
@@ -1826,18 +1822,18 @@ function NewExtArgsParse(option) {
                     newkey += util.format('%s_', prefix);
                 }
                 newkey += k;
-                args = self.inner_set_jsonvalue_not_defined(args, dict.maincmd, newkey, jsonvalue[k]);
+                args = self.inner_set_jsonvalue_not_defined(args, retparser.maincmd, newkey, jsonvalue[k]);
             }
         }
         return args;
     };
 
     self.inner_load_jsonfile = function (args, cmdname, jsonfile) {
-        assert.ok(!dict.nojsonoption, 'must no json file false');
+        assert.ok(!retparser.nojsonoption, 'must no json file false');
         assert.ok(not_null(jsonfile), 'jsonfile set');
         var prefix = '';
         var jsondata;
-        var v;
+        var jsonvalue;
         if (not_null(cmdname)) {
             prefix += cmdname;
         }
@@ -1847,14 +1843,14 @@ function NewExtArgsParse(option) {
                 encoding: 'utf-8',
                 flag: 'r'
             });
-        } catch (e) {
-            self.error_msg(util.format('can not read data from [%s]', jsonfile));
+        } catch (e2) {
+            self.error_msg(util.format('can not read data from [%s]\n', jsonfile, self.inner_get_except_info(e2)));
         }
 
         try {
-            v = JSON.parse(jsondata);
-        } catch (e) {
-            self.error_msg(util.format('can not parse (%s)\n%s', jsonfile, self.inner_get_except_info(e)));
+            jsonvalue = JSON.parse(jsondata);
+        } catch (e3) {
+            self.error_msg(util.format('can not parse (%s)\n%s', jsonfile, self.inner_get_except_info(e3)));
         }
         self.info(util.format('load (%s) prefix(%s) value (%s)', jsonfile, prefix, jsonvalue));
         return self.inner_load_jsonvalue(args, prefix, jsonvalue);
@@ -1870,10 +1866,7 @@ function NewExtArgsParse(option) {
         }
         for (idx = 0; idx < cmd.cmdopts.length; idx += 1) {
             curopt = cmd.cmdopts[idx];
-            if (curopt.isflag &&
-                curopt.typename !== 'prefix' &&
-                curopt.typename !== 'args' &&
-                curopt.typename !== 'help') {
+            if (curopt.isflag && curopt.typename !== 'prefix' && curopt.typename !== 'args' && curopt.typename !== 'help') {
                 args = self.inner_set_jsonvalue_not_defined(args, cmd, curopt.optdest, curopt.value);
             }
         }
@@ -1881,7 +1874,7 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_set_default_value = function (args) {
-        args = self.inner_set_parser_default_value(args, dict.maincmd);
+        args = self.inner_set_parser_default_value(args, retparser.maincmd);
         return args;
     };
 
@@ -1980,11 +1973,11 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_set_environ_value = function (args) {
-        return self.inner_set_environ_value_inner(args, '', dict.maincmd);
+        return self.inner_set_environ_value_inner(args, '', retparser.maincmd);
     };
 
     self.inner_check_varname_inner = function (paths, optcheck) {
-        var parentpath = [dict.maincmd];
+        var parentpath = [retparser.maincmd];
         var chld;
         var idx;
         var curpath;
@@ -2039,7 +2032,7 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_set_command_line_self_args_inner = function (paths) {
-        var parentpath = [dict.maincmd];
+        var parentpath = [retparser.maincmd];
         var chld;
         var idx;
         var curopt;
@@ -2083,16 +2076,16 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_set_command_line_self_args = function (paths) {
-        if (dict.ended !== 0) {
+        if (retparser.ended !== 0) {
             return;
         }
         self.inner_set_command_line_self_args(paths);
         self.inner_check_varname_inner();
-        dict.ended = 1;
+        retparser.ended = 1;
     };
 
     self.inner_parse_sub_command_json_set = function (args) {
-        if (not_null(args.subcommand) && !dict.nojsonoption) {
+        if (not_null(args.subcommand) && !retparser.nojsonoption) {
             var cmds;
             cmds = self.inner_find_commands_in_path(args.subcommand);
             idx = cmds.length;
@@ -2103,7 +2096,7 @@ function NewExtArgsParse(option) {
                 var jsondest;
                 subname = self.inner_format_cmd_from_cmd_array(dummycmds.splice(0, (idx + 1)));
                 prefix = subname.replace('.', '_');
-                jsondest = util.format('%s_%s', prefix, dict.jsonlong);
+                jsondest = util.format('%s_%s', prefix, retparser.jsonlong);
                 if (not_null(args[jsondest])) {
                     args = self.inner_load_jsonfile(args, subname, args[jsondest]);
                 }
@@ -2114,8 +2107,8 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_parse_command_json_set = function (args) {
-        if (!dict.nojsonoption && not_null(args[dict.jsonlong])) {
-            args = self.inner_load_jsonfile(args, '', args[dict.jsonlong]);
+        if (!retparser.nojsonoption && not_null(args[retparser.jsonlong])) {
+            args = self.inner_load_jsonfile(args, '', args[retparser.jsonlong]);
         }
         return args;
     };
@@ -2125,7 +2118,7 @@ function NewExtArgsParse(option) {
     };
 
     self.inner_parse_env_subcommand_json_set = function (args) {
-        if (!dict.nojsonoption && not_null(args.subcommand)) {
+        if (!retparser.nojsonoption && not_null(args.subcommand)) {
             var cmds;
             var idx;
             cmds = self.inner_find_commands_in_path(args.subcommand);
@@ -2137,7 +2130,7 @@ function NewExtArgsParse(option) {
                 var jsondest;
                 subname = self.inner_format_cmd_from_cmd_array(ccmds.splice(0, (idx + 1)));
                 prefix = subname.replace('.', '_');
-                jsondest = util.format('%s_%s', prefix, dict.jsonlong);
+                jsondest = util.format('%s_%s', prefix, retparser.jsonlong);
                 jsondest = jsondest.replace('-', '_');
                 jsondest = jsondest.toUpperCase();
                 if (not_null(process.env[jsondest])) {
@@ -2151,9 +2144,9 @@ function NewExtArgsParse(option) {
 
     self.inner_parse_env_command_json_set = function (args) {
         var jsonenv;
-        jsonenv = util.format('EXTARGS_%s', dict.jsonlong);
+        jsonenv = util.format('EXTARGS_%s', retparser.jsonlong);
         jsonenv = jsonenv.toUpperCase().replace('-', '_').replace('.', '_');
-        if (!dict.nojsonoption && not_null(process.env[jsonenv])) {
+        if (!retparser.nojsonoption && not_null(process.env[jsonenv])) {
             args = self.inner_load_jsonfile(args, '', process.env[jsonenv]);
         }
         return args;
@@ -2242,7 +2235,7 @@ function NewExtArgsParse(option) {
             /*to set accessed*/
             accessed[keycls.optdest] = true;
         } else {
-            nargs = dict.opt_parse_handle_map[keycls.typename](args, validx, keycls, params);
+            nargs = retparser.opt_parse_handle_map[keycls.typename](args, validx, keycls, params);
         }
         return nargs;
     };
@@ -2259,7 +2252,7 @@ function NewExtArgsParse(option) {
         if (!not_null(params)) {
             params = cpargs.splice(2);
         }
-        parsestate = ParseState(params, dict.maincmd, dict.options);
+        parsestate = ParseState(params, retparser.maincmd, retparser.options);
         args = {};
         try {
             while (true) {
@@ -2301,7 +2294,7 @@ function NewExtArgsParse(option) {
         var idx;
         if (not_null(mode)) {
             pushmode = true;
-            dict.output_mode.push(mode);
+            retparser.output_mode.push(mode);
         }
         args = {};
         try {
@@ -2311,17 +2304,17 @@ function NewExtArgsParse(option) {
                 params = cargs.splice(2);
             }
             args = retparser.parse_args(params);
-            dict.load_priority.forEach(function (elm) {
+            retparser.load_priority.forEach(function (elm) {
                 self.info(util.format('priority %s', elm));
-                args = dict.parse_set_map[elm](args);
+                args = retparser.parse_set_map[elm](args);
             });
             args = self.inner_set_default_value(args);
             if (not_null(args.subcommand)) {
                 cmds = self.inner_find_commands_in_path(args.subcommand);
                 funcname = cmds.splice(-1).keycls.function;
-                if (dict.output_mode.length > 0) {
-                    idx = (dict.output_mode.length - 1);
-                    getmode = dict.output_mode[idx];
+                if (retparser.output_mode.length > 0) {
+                    idx = (retparser.output_mode.length - 1);
+                    getmode = retparser.output_mode[idx];
                 }
                 if (not_null(funcname) && !not_null(getmode)) {
                     call_args_function(funcname, null, args, Context);
@@ -2332,7 +2325,7 @@ function NewExtArgsParse(option) {
             self.error_msg(self.inner_get_except_info(e));
         }
         if (pushmode) {
-            dict.output_mode.pop();
+            retparser.output_mode.pop();
             pushmode = false;
         }
         return args;
@@ -2348,7 +2341,7 @@ function NewExtArgsParse(option) {
         }
 
         if (!not_null(cmdpaths)) {
-            cmdpaths = [dict.maincmd];
+            cmdpaths = [retparser.maincmd];
         }
 
         if (!not_null(cmdname) || cmdname.length === 0) {
@@ -2377,7 +2370,7 @@ function NewExtArgsParse(option) {
         var sarr;
         var copysarr;
         if (!not_null(cmdpaths)) {
-            cmdpaths = [dict.maincmd];
+            cmdpaths = [retparser.maincmd];
         }
         if (!not_null(cmdname) || cmdname.length === 0) {
             copycmds = cmdpaths.slice();
@@ -2445,7 +2438,7 @@ function NewExtArgsParse(option) {
         var sarr;
         var copysarr;
         if (!not_null(cmdpaths)) {
-            cmdpaths = [dict.maincmd];
+            cmdpaths = [retparser.maincmd];
         }
 
         if (!not_null(cmdname) || cmdname.length === 0) {
