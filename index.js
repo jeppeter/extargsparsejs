@@ -1105,79 +1105,82 @@ module.exports.set_attr_args = set_attr_args;
 function OptCheck() {
     'use strict';
     var self = {};
-    var dict = {};
+    var innerself = {};
 
-    self.inner_reset = function () {
-        dict.longopt = [];
-        dict.shortopt = [];
-        dict.varname = [];
+    innerself.inner_reset = function () {
+        innerself.longopt = [];
+        innerself.shortopt = [];
+        innerself.varname = [];
         return self;
     };
 
-    self.inner_init_fn = function () {
-        self.inner_reset();
+    innerself.inner_init_fn = function () {
+        innerself.inner_reset();
         return self;
-    };
-
-    self.get_longopt = function () {
-        return dict.longopt;
-    };
-
-    self.get_shortopt = function () {
-        return dict.shortopt;
-    };
-
-    self.get_varname = function () {
-        return dict.varname;
     };
 
     self.copy = function (other) {
         self.inner_reset();
-        dict.longopt = dict.longopt.concat(other.get_longopt());
-        dict.shortopt = dict.shortopt.concat(other.get_shortopt());
-        dict.varname = dict.varname.concat(other.get_varname());
+        innerself.longopt = innerself.longopt.concat(other.get_longopt());
+        innerself.shortopt = innerself.shortopt.concat(other.get_shortopt());
+        innerself.varname = innerself.varname.concat(other.get_varname());
         return;
     };
 
+    self.get_longopt = function () {
+        return innerself.longopt;
+    };
+
+    self.get_shortopt = function () {
+        return innerself.shortopt;
+    };
+
+    self.get_varname = function () {
+        return innerself.varname;
+    };
+
+
     self.add_and_check = function (typename, value) {
         if (typename === 'longopt') {
-            if (dict.longopt.indexOf(value) >= 0) {
+            if (innerself.longopt.indexOf(value) >= 0) {
                 return false;
             }
-            dict.longopt.push(value);
+            innerself.longopt.push(value);
             if (true) {
                 return true;
             }
         } else if (typename === 'shortopt') {
-            if (dict.shortopt.indexOf(value) >= 0) {
+            if (innerself.shortopt.indexOf(value) >= 0) {
                 return false;
             }
-            dict.shortopt.push(value);
+            innerself.shortopt.push(value);
             if (true) {
                 return true;
             }
         } else if (typename === 'varname') {
-            if (dict.varname.indexOf(value) >= 0) {
+            if (innerself.varname.indexOf(value) >= 0) {
                 return false;
             }
-            dict.varname.push(value);
+            innerself.varname.push(value);
             return true;
         }
         return false;
     };
 
-    return self.inner_init_fn();
+    return innerself.inner_init_fn();
 }
 
-function NewExtArgsParse(option) {
+function ExtArgsParse(option) {
     'use strict';
     var reserved_args = ['subcommand', 'subnargs', 'nargs', 'extargs', 'args'];
     var opt = option || {};
     var self = new LoggerObject();
     var retparser = {};
     var accessed = {};
+    var innerself = {};
 
-    self.inner_format_cmd_from_cmd_array = function (cmdarray) {
+
+    innerself.inner_format_cmd_from_cmd_array = function (cmdarray) {
         var cmdname = '';
         if (!not_null(cmdarray)) {
             return '';
@@ -1191,9 +1194,10 @@ function NewExtArgsParse(option) {
         return cmdname;
     };
 
-    self.inner_need_args_error = function (args, validx, keycls, params) {
-        var keyval = '';
+    innerself.inner_need_args_error = function (args, validx, keycls, params) {
+        var keyval;
         args = args;
+        keyval = '';
         if (validx > 0) {
             keyval = params[(validx - 1)];
         }
@@ -1208,14 +1212,7 @@ function NewExtArgsParse(option) {
         return;
     };
 
-    self.inner_check_args_need = function (args, validx, keycls, params) {
-        if (validx >= params.length) {
-            self.inner_need_args_error(args, validx, keycls, params);
-        }
-        return;
-    };
-
-    self.inner_bool_action = function (args, validx, keycls, params) {
+    innerself.inner_bool_action = function (args, validx, keycls, params) {
         validx = validx;
         params = params;
         if (keycls.value) {
@@ -1226,9 +1223,11 @@ function NewExtArgsParse(option) {
         return 0;
     };
 
-    self.inner_append_action = function (args, validx, keycls, params) {
+    innerself.inner_append_action = function (args, validx, keycls, params) {
         var value;
-        self.inner_check_args_need(args, validx, keycls, params);
+        if (validx >= params.length) {
+            innerself.inner_need_args_error(validx, keycls, params);
+        }
         value = params[validx];
         if (!not_null(args[keycls.optdest])) {
             args[keycls.optdest] = [];
@@ -1237,27 +1236,31 @@ function NewExtArgsParse(option) {
         return 1;
     };
 
-    self.inner_string_action = function (args, validx, keycls, params) {
-        self.inner_check_args_need(args, validx, keycls, params);
+    innerself.inner_string_action = function (args, validx, keycls, params) {
+        if (validx >= params.length) {
+            innerself.inner_need_args_error(validx, keycls, params);
+        }
         args[keycls.optdest] = params[validx];
         return 1;
     };
 
-    self.inner_jsonfile_action = function (args, validx, keycls, params) {
-        return self.inner_string_action(args, validx, keycls, params);
+    innerself.inner_jsonfile_action = function (args, validx, keycls, params) {
+        return innerself.inner_string_action(args, validx, keycls, params);
     };
 
-    self.inner_int_action = function (args, validx, keycls, params) {
+    innerself.inner_int_action = function (args, validx, keycls, params) {
         var base = 10;
         var value;
-        self.inner_check_args_need(args, validx, keycls, params);
+        if (validx >= params.length) {
+            innerself.inner_need_args_error(validx, keycls, params);
+        }
         value = params[validx];
         self.info(util.format('set value [%s][%s]', validx, value));
         if (value.startsWith('0x') || value.startsWith('0X')) {
             value = value.splice(2);
             base = 16;
         } else if (value.startsWith('x') || value.startsWith('X')) {
-            value = value.splice(2);
+            value = value.splice(1);
             base = 16;
         }
         value = value.toLowerCase();
@@ -1265,12 +1268,11 @@ function NewExtArgsParse(option) {
         if ((!value.match('^[0-9a-f]+$') && base === 16) || (!value.match('^[0-9]+$') && base === 10)) {
             self.error_msg(util.format('%s not valid int', params[validx]));
         }
-
         args[keycls.optdest] = parseInt(value, base);
         return 1;
     };
 
-    self.inner_inc_action = function (args, validx, keycls, params) {
+    innerself.inner_inc_action = function (args, validx, keycls, params) {
         validx = validx;
         params = params;
         if (!not_null(args[keycls.optdest])) {
@@ -1280,18 +1282,20 @@ function NewExtArgsParse(option) {
         return 0;
     };
 
-    self.innner_float_action = function (args, validx, keycls, params) {
+    innerself.innner_float_action = function (args, validx, keycls, params) {
         var value;
-        self.inner_check_args_need(args, validx, keycls, params);
+        if (validx >= params.length) {
+            innerself.inner_need_args_error(validx, keycls, params);
+        }
         value = params[validx];
         if (!value.match('^[0-9]+(\.[0-9]+)?$')) {
-            self.error_msg(util.format('%s not valid float', params[validx]));
+            self.error_msg(util.format('can not parse %s', params[validx]));
         }
         args[keycls.optdest] = parseFloat(value);
         return 1;
     };
 
-    self.inner_help_action = function (args, validx, keycls, value) {
+    innerself.inner_help_action = function (args, validx, keycls, value) {
         args = args;
         validx = validx;
         keycls = keycls;
@@ -1300,7 +1304,7 @@ function NewExtArgsParse(option) {
         return 0;
     };
 
-    self.inner_command_action = function (args, validx, keycls, params) {
+    innerself.inner_command_action = function (args, validx, keycls, params) {
         args = args;
         validx = validx;
         keycls = keycls;
@@ -1308,19 +1312,19 @@ function NewExtArgsParse(option) {
         return 0;
     };
 
-    self.inner_json_value_base = function (args, keycls, value) {
+    innerself.inner_json_value_base = function (args, keycls, value) {
         args[keycls.optdest] = value;
         return;
     };
 
-    self.inner_json_value_error = function (args, keycls, value) {
+    innerself.inner_json_value_error = function (args, keycls, value) {
         args = args;
         keycls = keycls;
         value = value;
         throw new Error('error set json value');
     };
 
-    self.inner_get_full_trace_back = function (callstck, tabs, cnt) {
+    innerself.inner_get_full_trace_back = function (callstck, tabs, cnt) {
         if (!not_null(callstck)) {
             callstck = 1;
         }
@@ -1343,7 +1347,7 @@ function NewExtArgsParse(option) {
     self.error_msg = function (message) {
         var output = false;
         var outs = '';
-        var modes = retparser.output_mode.slice();
+        var modes = innerself.output_mode.slice();
         if (modes.length > 0) {
             if (modes.splice(-1) === 'bash') {
                 outs = '';
@@ -1352,6 +1356,7 @@ function NewExtArgsParse(option) {
                 outs += 'EXTARGSEOF\n';
                 outs += 'exit 3\n';
                 process.stdout.write(outs);
+                output = true;
                 process.exit(3);
             }
         }
@@ -1360,7 +1365,7 @@ function NewExtArgsParse(option) {
             outs += util.format('    %s', self.format_call_msg(message, 2));
         }
 
-        if (retparser.error_handler === 'exit') {
+        if (innerself.error_handler === 'exit') {
             process.stderr.write(outs);
             process.exit(3);
             return;
@@ -1368,18 +1373,18 @@ function NewExtArgsParse(option) {
         throw new Error(outs);
     };
 
-    self.inner_check_flag_insert = function (keycls, curparser) {
+    innerself.inner_check_flag_insert = function (keycls, curparser) {
+        var lastparser;
+        var copyparser;
         if (!not_null(curparser)) {
             curparser = null;
         }
-        var lastparser;
-        var copyparser;
 
         if (not_null(curparser)) {
             copyparser = curparser.slice();
             lastparser = copyparser.splice(-1);
         } else {
-            lastparser = retparser.maincmd;
+            lastparser = innerself.maincmd;
         }
 
         lastparser.cmdopts.forEach(function (curopt) {
@@ -1399,9 +1404,9 @@ function NewExtArgsParse(option) {
         return true;
     };
 
-    self.inner_check_flag_insert_mustsucc = function (keycls, curparser) {
+    innerself.inner_check_flag_insert_mustsucc = function (keycls, curparser) {
         var inserted;
-        inserted = self.inner_check_flag_insert(keycls, curparser);
+        inserted = innerself.inner_check_flag_insert(keycls, curparser);
         if (!inserted) {
             var curcmdname = '';
             if (not_null(curparser)) {
@@ -1417,7 +1422,7 @@ function NewExtArgsParse(option) {
         return inserted;
     };
 
-    self.inner_load_command_line_base = function (prefix, keycls, curparser) {
+    innerself.inner_load_command_line_base = function (prefix, keycls, curparser) {
         prefix = prefix;
         if (!not_null(curparser)) {
             curparser = null;
@@ -1425,19 +1430,19 @@ function NewExtArgsParse(option) {
         if (keycls.isflag && keycls.flagname !== '$' && reserved_args.indexOf(keycls.flagname)) {
             self.error_msg(util.format('(%s) in reserved_args (%s)', keycls.flagname, reserved_args));
         }
-        self.inner_check_flag_insert_mustsucc(keycls, curparser);
+        innerself.inner_check_flag_insert_mustsucc(keycls, curparser);
         return true;
     };
 
 
-    self.inner_load_command_line_args = function (prefix, keycls, curparser) {
+    innerself.inner_load_command_line_args = function (prefix, keycls, curparser) {
         prefix = prefix;
-        return self.inner_check_flag_insert(keycls, curparser);
+        return innerself.inner_check_flag_insert(keycls, curparser);
     };
 
-    self.inner_load_command_line_help = function (prefix, keycls, curparser) {
+    innerself.inner_load_command_line_help = function (prefix, keycls, curparser) {
         prefix = prefix;
-        return self.inner_check_flag_insert(keycls, curparser);
+        return innerself.inner_check_flag_insert(keycls, curparser);
     };
 
     self.inner_load_command_line_jsonfile = function (keycls, curparser) {
@@ -3532,5 +3537,5 @@ var set_attr_self = function (self, args, prefix) {
     return self;
 };
 
-module.exports.ExtArgsParse = NewExtArgsParse;
+module.exports.ExtArgsParse = ExtArgsParse;
 module.exports.set_attr_self = set_attr_self;
