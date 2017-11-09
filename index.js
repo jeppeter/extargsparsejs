@@ -125,7 +125,7 @@ function LoggerObject(cmdname) {
         var stktr = stacktrace.get();
         var retstr = '';
         if (callstack !== undefined && stktr.length > callstack && not_null(stktr[callstack])) {
-            retstr += util.format('[%s:%s:%s]', format_length(stktr[callstack].getFileName(), 10), format_length(stktr[callstack].getFunctionName(), 20), format_length(stktr[callstack].getLineNumber(), 5));
+            retstr += util.format('[%s:%s:%s]', format_length(stktr[callstack].getFileName(), 10), format_length(util.format('%s', stktr[callstack].getFunctionName()), 20), format_length(util.format('%s', stktr[callstack].getLineNumber()), 5));
         }
         retstr += msg;
         return retstr + '\n';
@@ -134,7 +134,7 @@ function LoggerObject(cmdname) {
     self.inner_output = function (msg, needlevel, callstack) {
         if (self.loglevel >= needlevel) {
             if (!not_null(callstack)) {
-                callstack = 2;
+                callstack = 3;
             } else {
                 callstack += 1;
             }
@@ -1397,8 +1397,7 @@ function ExtArgsParse(option) {
         return innerself.inner_check_flag_insert(keycls, curparser);
     };
 
-    innerself.inner_load_command_line_help = function (prefix, keycls, curparser) {
-        prefix = prefix;
+    innerself.inner_load_command_line_help = function (keycls, curparser) {
         return innerself.inner_check_flag_insert(keycls, curparser);
     };
 
@@ -1750,6 +1749,7 @@ function ExtArgsParse(option) {
             v = d[k];
             self.info(util.format('%s , %s , %s , True', prefix, k, v));
             keycls = keyparse.KeyParser(prefix, k, v, false, false, false, innerself.longprefix, innerself.shortprefix, innerself.options.flagnochange);
+            self.info(util.format('type [%s]', keycls.typename));
             valid = innerself.inner_load_command_map[keycls.typename](prefix, keycls, parentpath);
             if (!valid) {
                 self.error_msg(util.format('can not add (%s, %s)', k, v));
