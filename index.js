@@ -1336,7 +1336,7 @@ function ExtArgsParse(option) {
         var rets = '';
         var stktr = stacktrace.get();
         var idx;
-        for (idx = callstck; idx < stktr.length; idx += 1) {
+        for (idx = callstck; idx < stktr.length && ((cnt > 0 && idx < cnt) || cnt <= 0); idx += 1) {
             rets += format_length('', tabs * 4);
             rets += util.format('[%d][%s:%s:%s]\n', idx, stktr[idx].getFileName(), stktr[idx].getFunctionName(), stktr[idx].getLineNumber());
         }
@@ -1519,7 +1519,7 @@ function ExtArgsParse(option) {
         innerself.helpshort = opt.helpshort;
         innerself.jsonlong = opt.jsonlong;
         innerself.cmdprefixadded = opt.cmdprefixadded;
-        innerself.load_command_map = {
+        innerself.inner_load_command_map = {
             string: innerself.inner_load_command_line_base,
             unicode: innerself.inner_load_command_line_base,
             int: innerself.inner_load_command_line_base,
@@ -1603,14 +1603,14 @@ function ExtArgsParse(option) {
         if (not_null(cmdname)) {
             sarr = cmdname.split('.');
         }
-        if (not_null(retparser.maincmd)) {
-            commands.push(retparser.maincmd);
+        if (not_null(innerself.maincmd)) {
+            commands.push(innerself.maincmd);
         }
         idx = 0;
         while (idx <= sarr.length && not_null(cmdname) && cmdname.length > 0) {
             if (idx !== 0) {
-                curcommand = self.inner_find_command_inner(sarr[(idx - 1)], commands);
-                if (not_null(curcommand)) {
+                curcommand = innerself.inner_find_command_inner(sarr[(idx - 1)], commands);
+                if (!not_null(curcommand)) {
                     break;
                 }
                 commands.push(curcommand);
@@ -1620,15 +1620,18 @@ function ExtArgsParse(option) {
         return commands;
     };
 
-    self.inner_find_command_inner = function (name, curparser) {
+    innerself.inner_find_command_inner = function (name, curparser) {
         var sarr;
         var curroot;
         var nextparsers = [];
         var copyparser;
         var copysarr;
 
+        if (!not_null(curparser)) {
+            curparser = null;
+        }
         sarr = name.split('.');
-        curroot = retparser.maincmd;
+        curroot = innerself.maincmd;
         if (not_null(curparser)) {
             nextparsers = curparser;
             copyparser = curparser.slice();
@@ -1645,7 +1648,7 @@ function ExtArgsParse(option) {
                     }
                     nextparsers.push(curcmd);
                     copysarr = sarr.slice();
-                    return self.inner_find_command_inner(copysarr.splice(1).join('.'), nextparsers);
+                    return innerself.inner_find_command_inner(copysarr.splice(1).join('.'), nextparsers);
                 }
             });
         } else {
@@ -1658,7 +1661,7 @@ function ExtArgsParse(option) {
         return null;
     };
 
-    self.inner_find_subparser_inner = function (cmdname, parentcmd) {
+    innerself.inner_find_subparser_inner = function (cmdname, parentcmd) {
         var sarr;
         var findcmd;
         var copyname;
@@ -1669,13 +1672,13 @@ function ExtArgsParse(option) {
             return parentcmd;
         }
         if (!not_null(parentcmd)) {
-            parentcmd = retparser.maincmd;
+            parentcmd = innerself.maincmd;
         }
         sarr = cmdname.split('.');
         parentcmd.subcommands.forEach(function (curcmd) {
             if (curcmd.cmdname === sarr[0]) {
                 copyname = sarr.slice();
-                findcmd = self.inner_find_subparser_inner(copyname.splice(1).join('.'), curcmd);
+                findcmd = innerself.inner_find_subparser_inner(copyname.splice(1).join('.'), curcmd);
                 if (not_null(findcmd)) {
                     return findcmd;
                 }
@@ -1684,12 +1687,12 @@ function ExtArgsParse(option) {
         return null;
     };
 
-    self.inner_get_subparser_inner = function (keycls, curparser) {
+    innerself.inner_get_subparser_inner = function (keycls, curparser) {
         if (!not_null(curparser)) {
             curparser = null;
         }
         var cmdname = '';
-        var parentname = self.inner_format_cmdname_path(curparser);
+        var parentname = innerself.inner_format_cmdname_path(curparser);
         var cmdparser;
         var copyparser;
         cmdname += parentname;
@@ -1697,13 +1700,13 @@ function ExtArgsParse(option) {
             cmdname += '.';
         }
         cmdname += keycls.cmdname;
-        cmdparser = self.inner_find_subparser_inner(cmdname);
+        cmdparser = innerself.inner_find_subparser_inner(cmdname);
         if (not_null(cmdparser)) {
             return cmdparser;
         }
         cmdparser = new ParserCompat(keycls);
         if (parentname.length === 0) {
-            retparser.maincmd.subcommands.push(cmdparser);
+            innerself.maincmd.subcommands.push(cmdparser);
         } else {
             copyparser = curparser.slice();
             copyparser.splice(-1).subcommands.push(cmdparser);
@@ -1711,7 +1714,7 @@ function ExtArgsParse(option) {
         return cmdparser;
     };
 
-    self.inner_load_command_subparser = function (prefix, keycls, lastparser) {
+    innerself.inner_load_command_subparser = function (prefix, keycls, lastparser) {
         if (!not_null(lastparser)) {
             lastparser = null;
         }
@@ -1724,8 +1727,8 @@ function ExtArgsParse(option) {
         if (keycls.iscmd && reserved_args.indexOf(keycls.cmdname) >= 0) {
             self.error_msg(util.format('command(%s) in reserved_args (%s)', keycls.cmdname, reserved_args));
         }
-        parserinner = self.inner_get_subparser_inner(keycls, lastparser);
-        nextparsers = [retparser.maincmd];
+        parserinner = innerself.inner_get_subparser_inner(keycls, lastparser);
+        nextparsers = [innerself.maincmd];
         if (not_null(lastparser)) {
             nextparsers = lastparser;
         }
@@ -1733,30 +1736,35 @@ function ExtArgsParse(option) {
         nextparsers.push(parserinner);
         self.info('nextparser %s', self.format_string(nextparsers));
         self.info('keycls %s', keycls.format());
-        if (retparser.cmdprefixadded) {
+        if (innerself.cmdprefixadded) {
             newprefix = prefix;
             if (newprefix.length > 0) {
-                newprefix += '.';
+                newprefix += '_';
             }
             newprefix += keycls.cmdname;
+        } else {
+            newprefix = ''
         }
-        self.inner_load_command_line_inner(newprefix, keycls.value, nextparsers);
+        innerself.inner_load_command_line_inner(newprefix, keycls.value, nextparsers);
         nextparsers.pop();
         return true;
     };
 
-    self.inner_load_command_prefix = function (prefix, keycls, curparser) {
+    innerself.inner_load_command_prefix = function (prefix, keycls, curparser) {
+        if (!not_null(curparser)) {
+            curparser = null;
+        }
         prefix = prefix;
         if (reserved_args.indexOf(keycls.prefix) >= 0) {
             self.error_msg(util.format('prefix (%s) in reserved_args (%s)', keycls.prefix, reserved_args));
         }
-        self.inner_load_command_line_inner(keycls.prefix, keycls.value, curparser);
+        innerself.inner_load_command_line_inner(keycls.prefix, keycls.value, curparser);
         return true;
     };
 
-    self.inner_load_command_line_inner = function (prefix, d, curparser) {
-        var parentpath = [retparser.maincmd];
-        var keys = Object.keys(d);
+    innerself.inner_load_command_line_inner = function (prefix, d, curparser) {
+        var parentpath = [innerself.maincmd];
+        var keys;
         var idx;
         var v;
         var k;
@@ -1765,23 +1773,26 @@ function ExtArgsParse(option) {
         if (!not_null(curparser)) {
             curparser = null;
         }
-        if (!retparser.nojsonoption) {
-            self.inner_load_command_line_json_added(curparser);
+
+        /*to add default flag for one parser*/
+        if (!not_null(innerself.nojsonoption) || !innerself.nojsonoption) {
+            innerself.inner_load_command_line_json_added(curparser);
         }
-        if (!retparser.nohelpoption) {
-            self.inner_load_command_line_help_added(curparser);
+        if (!not_null(innerself.nohelpoption) || !innerself.nohelpoption) {
+            innerself.inner_load_command_line_help_added(curparser);
         }
 
+        parentpath = [innerself.maincmd];
         if (not_null(curparser)) {
             parentpath = curparser;
         }
-
+        keys = Object.keys(d);
         for (idx = 0; idx < keys.length; idx += 1) {
             k = keys[idx];
             v = d[k];
             self.info(util.format('%s , %s , %s , True', prefix, k, v));
-            keycls = keyparse.KeyParser(prefix, k, v, false, false, false, retparser.longprefix, retparser.shortprefix, retparser.flagnochange);
-            valid = retparser.load_command_map[keycls.typename](prefix, keycls, parentpath);
+            keycls = keyparse.KeyParser(prefix, k, v, false, false, false, innerself.longprefix, innerself.shortprefix, innerself.options.flagnochange);
+            valid = innerself.inner_load_command_map[keycls.typename](prefix, keycls, parentpath);
             if (!valid) {
                 self.error_msg(util.format('can not add (%s, %s)', k, v));
             }
@@ -1790,57 +1801,57 @@ function ExtArgsParse(option) {
         return;
     };
 
-    retparser.load_command_line = function (d) {
-        if (retparser.ended !== 0) {
+    self.load_command_line = function (d) {
+        if (innerself.ended !== 0) {
             throw new Error(util.format('you have call parse_command_line before call load_command_line_string or load_command_line'));
         }
         if (typeof d !== 'object') {
             self.error_msg(util.format('input parameter (%s) not object', d));
         }
-        self.inner_load_command_line_inner('', d, null);
+        innerself.inner_load_command_line_inner('', d, null);
         return;
     };
 
-    self.inner_get_except_info = function (e) {
+    innerself.inner_get_except_info = function (e) {
         var rets = '';
         rets += util.format('exception: %s\n', e);
         rets += 'trace back:\n';
-        rets += self.inner_get_full_trace_back(2, 1, 0);
+        rets += innerself.inner_get_full_trace_back(2, 1, 0);
         return rets;
     };
 
-    retparser.load_command_line_string = function (s) {
+    self.load_command_line_string = function (s) {
         var d;
         try {
             d = JSON.parse(s);
         } catch (e) {
             self.error_msg(util.format('(%s) not valid json string\n%s', s, self.inner_get_except_info(e)));
         }
-        retparser.load_command_line(d);
+        self.load_command_line(d);
         return;
     };
 
-    self.inner_print_help = function (cmdparser) {
-        if (not_null(retparser.help_handler) && retparser.help_handler === 'nohelp') {
+    innerself.inner_print_help = function (cmdparser) {
+        if (not_null(innerself.help_handler) && innerself.help_handler === 'nohelp') {
             return 'no help information';
         }
         var curcmd;
         var cmdpaths = [];
         var idx;
-        curcmd = retparser.maincmd;
+        curcmd = innerself.maincmd;
         if (not_null(cmdparser)) {
             self.info(util.format('cmdparser %s', self.format_string(cmdparser)));
             curcmd = cmdparser.splice(-1);
             idx = 0;
             while (idx < (cmdparser.length - 1)) {
-                cmdparser.push(cmdparser[idx]);
+                cmdpaths.push(cmdparser[idx]);
                 idx += 1;
             }
         }
         return curcmd.get_help_info(null, cmdpaths);
     };
 
-    retparser.print_help = function (fout, cmdname) {
+    self.print_help = function (fout, cmdname) {
         if (!not_null(fout)) {
             fout = process.stderr;
         }
@@ -1849,40 +1860,46 @@ function ExtArgsParse(option) {
         }
         var s;
         var paths;
-        paths = self.inner_find_commands_in_path(cmdname);
-        s = self.inner_print_help(paths);
-        if (not_null(retparser.output_mode) && retparser.output_mode.length > 0 && retparser.output_mode.splice(-1) === 'bash') {
+        paths = innerself.inner_find_commands_in_path(cmdname);
+        s = innerself.inner_print_help(paths);
+        if (not_null(innerself.output_mode) && innerself.output_mode.length > 0 && innerself.output_mode.splice(-1) === 'bash') {
             var outs;
             outs = util.format('cat <<EOFMM\n%s\nEOFMM\nexit 0', s);
             process.stdout.write(outs);
             process.exit(0);
+            return;
         }
         fout.write(s);
         return;
     };
 
-    self.inner_get_args_accessed = function (optdest) {
-        if (accessed[optdest] !== undefined) {
+    innerself.inner_get_args_accessed = function (optdest) {
+        if(not_null(accessed[optdest])) {
             return true;
         }
         return false;
     };
 
-    self.inner_set_jsonvalue_not_defined = function (args, cmd, key, value) {
+    innerself.inner_set_jsonvalue_not_defined = function (args, cmd, key, value) {
         var idx;
         var chld;
         var curopt;
         for (idx = 0; idx < cmd.subcommands.length; idx += 1) {
             chld = cmd.subcommands[idx];
-            args = self.inner_set_jsonvalue_not_defined(args, chld, key, value);
+            args = innerself.inner_set_jsonvalue_not_defined(args, chld, key, value);
         }
 
         for (idx = 0; idx < cmd.cmdopts.length; idx += 1) {
             curopt = cmd.cmdopts[idx];
             if (curopt.isflag && curopt.typename !== 'prefix' && curopt.typename !== 'args' && curopt.typename !== 'help') {
                 if (curopt.optdest === key) {
-                    if (!self.inner_get_args_accessed(key)) {
-                        self.inner_call_json_value(args, key, value);
+                    if (!innerself.inner_get_args_accessed(key)) {
+                        if (keyparse.get_value_type(curopt.value) !== keyparse.get_value_type(value)) {
+                            self.warn(util.format('%s  type (%s) as default value type (%s)',key,keyparse.get_value_type(value),keyparse.get_value_type(curopt.value)));
+                        } else {
+                            innerself.inner_call_json_value(args, key, value);    
+                        }
+                        
                     }
                     return args;
                 }
@@ -1891,7 +1908,7 @@ function ExtArgsParse(option) {
         return args;
     };
 
-    self.inner_load_jsonvalue = function (args, prefix, jsonvalue) {
+    innerself.inner_load_jsonvalue = function (args, prefix, jsonvalue) {
         var k;
         var idx;
         var keys = Object.keys(jsonvalue);
@@ -1905,21 +1922,21 @@ function ExtArgsParse(option) {
                     newprefix += util.formt('%s_', prefix);
                 }
                 newprefix += k;
-                args = self.inner_load_jsonvalue(args, newprefix, jsonvalue[k]);
+                args = innerself.inner_load_jsonvalue(args, newprefix, jsonvalue[k]);
             } else {
                 newkey = '';
                 if (prefix.length > 0) {
                     newkey += util.format('%s_', prefix);
                 }
                 newkey += k;
-                args = self.inner_set_jsonvalue_not_defined(args, retparser.maincmd, newkey, jsonvalue[k]);
+                args = innerself.inner_set_jsonvalue_not_defined(args, innerself.maincmd, newkey, jsonvalue[k]);
             }
         }
         return args;
     };
 
-    self.inner_load_jsonfile = function (args, cmdname, jsonfile) {
-        assert.ok(!retparser.nojsonoption, 'must no json file false');
+    innerself.inner_load_jsonfile = function (args, cmdname, jsonfile) {
+        assert.ok(!innerself.nojsonoption, 'must no json file false');
         assert.ok(not_null(jsonfile), 'jsonfile set');
         var prefix = '';
         var jsondata;
@@ -1934,7 +1951,7 @@ function ExtArgsParse(option) {
                 flag: 'r'
             });
         } catch (e2) {
-            self.error_msg(util.format('can not read data from [%s]\n', jsonfile, self.inner_get_except_info(e2)));
+            self.error_msg(util.format('can not read data from [%s]\n%s', jsonfile, self.inner_get_except_info(e2)));
         }
 
         try {
@@ -1943,28 +1960,28 @@ function ExtArgsParse(option) {
             self.error_msg(util.format('can not parse (%s)\n%s', jsonfile, self.inner_get_except_info(e3)));
         }
         self.info(util.format('load (%s) prefix(%s) value (%s)', jsonfile, prefix, jsonvalue));
-        return self.inner_load_jsonvalue(args, prefix, jsonvalue);
+        return innerself.inner_load_jsonvalue(args, prefix, jsonvalue);
     };
 
-    self.inner_set_parser_default_value = function (args, cmd) {
+    innerself.inner_set_parser_default_value = function (args, cmd) {
         var chld;
         var idx;
         var curopt;
         for (idx = 0; idx < cmd.subcommands.length; idx += 1) {
             chld = cmd.subcommands[idx];
-            args = self.inner_set_parser_default_value(args, chld);
+            args = innerself.inner_set_parser_default_value(args, chld);
         }
         for (idx = 0; idx < cmd.cmdopts.length; idx += 1) {
             curopt = cmd.cmdopts[idx];
             if (curopt.isflag && curopt.typename !== 'prefix' && curopt.typename !== 'args' && curopt.typename !== 'help') {
-                args = self.inner_set_jsonvalue_not_defined(args, cmd, curopt.optdest, curopt.value);
+                args = innerself.inner_set_jsonvalue_not_defined(args, cmd, curopt.optdest, curopt.value);
             }
         }
         return args;
     };
 
-    self.inner_set_default_value = function (args) {
-        args = self.inner_set_parser_default_value(args, retparser.maincmd);
+    innerself.inner_set_default_value = function (args) {
+        args = innerself.inner_set_parser_default_value(args, innerself.maincmd);
         return args;
     };
 
