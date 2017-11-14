@@ -1319,7 +1319,7 @@ function ExtArgsParse(option) {
         }
         if (!output) {
             outs = 'parse command error\n';
-            outs += util.format('    %s', self.format_call_msg(message, 2));
+            outs += util.format('    %s', self.format_call_message(message, 2));
         }
 
         if (innerself.error_handler === 'exit') {
@@ -1333,18 +1333,24 @@ function ExtArgsParse(option) {
     innerself.inner_check_flag_insert = function (keycls, curparser) {
         var lastparser;
         var copyparser;
+        var idx;
+        var curopt;
         if (!not_null(curparser)) {
             curparser = null;
         }
 
         if (not_null(curparser)) {
+            self.info(' ');
             copyparser = curparser.slice();
-            lastparser = copyparser.splice(-1);
+            lastparser = copyparser.splice(-1)[0];
         } else {
+            self.info(' ');
             lastparser = innerself.maincmd;
         }
 
-        lastparser.cmdopts.forEach(function (curopt) {
+        self.info(util.format('cmdopts [%s]', lastparser.cmdopts));
+        for (idx = 0; idx < lastparser.cmdopts.length; idx += 1) {
+            curopt = lastparser.cmdopts[idx];
             if (curopt.isflag && curopt.flagname !== '$' && keycls.flagname !== '$') {
                 if (curopt.typename !== 'help' && keycls.typename !== 'help') {
                     if (curopt.optdest === keycls.optdest) {
@@ -1356,7 +1362,7 @@ function ExtArgsParse(option) {
             } else if (curopt.isflag && curopt.flagname === '$' && keycls.flagname === '$') {
                 return false;
             }
-        });
+        }
         lastparser.cmdopts.push(keycls);
         return true;
     };
@@ -1384,7 +1390,7 @@ function ExtArgsParse(option) {
         if (!not_null(curparser)) {
             curparser = null;
         }
-        if (keycls.isflag && keycls.flagname !== '$' && reserved_args.indexOf(keycls.flagname)) {
+        if (keycls.isflag && keycls.flagname !== '$' && reserved_args.indexOf(keycls.flagname) >= 0) {
             self.error_msg(util.format('(%s) in reserved_args (%s)', keycls.flagname, reserved_args));
         }
         innerself.inner_check_flag_insert_mustsucc(keycls, curparser);
@@ -1476,55 +1482,58 @@ function ExtArgsParse(option) {
         innerself.helpshort = opt.helpshort;
         innerself.jsonlong = opt.jsonlong;
         innerself.cmdprefixadded = opt.cmdprefixadded;
-        innerself.inner_load_command_map = {
-            string: innerself.inner_load_command_line_base,
-            unicode: innerself.inner_load_command_line_base,
-            int: innerself.inner_load_command_line_base,
-            long: innerself.inner_load_command_line_base,
-            float: innerself.inner_load_command_line_base,
-            array: innerself.inner_load_command_line_base,
-            boolean: innerself.inner_load_command_line_base,
-            args: innerself.inner_load_command_line_args,
-            command: innerself.inner_load_command_subparser,
-            prefix: innerself.inner_load_command_prefix,
-            count: innerself.inner_load_command_base,
-            help: innerself.inner_load_command_line_base,
-            jsonfile: innerself.inner_load_command_line_base
-        };
-        innerself.opt_parse_handle_map = {
-            string: innerself.inner_string_action,
-            unicode: innerself.inner_string_action,
-            boolean: innerself.inner_bool_action,
-            int: innerself.inner_int_action,
-            long: innerself.inner_int_action,
-            array: innerself.inner_append_action,
-            count: innerself.inner_inc_action,
-            help: innerself.inner_help_action,
-            jsonfile: innerself.inner_jsonfile_action,
-            command: innerself.inner_command_action,
-            float: innerself.innner_float_action
-        };
+
+        /*inner load command map set*/
+        innerself.inner_load_command_map = {};
+        innerself.inner_load_command_map.string = innerself.inner_load_command_line_base;
+        innerself.inner_load_command_map.unicode = innerself.inner_load_command_line_base;
+        innerself.inner_load_command_map.int = innerself.inner_load_command_line_base;
+        innerself.inner_load_command_map.long = innerself.inner_load_command_line_base;
+        innerself.inner_load_command_map.float = innerself.inner_load_command_line_base;
+        innerself.inner_load_command_map.array = innerself.inner_load_command_line_base;
+        innerself.inner_load_command_map.boolean = innerself.inner_load_command_line_base;
+        innerself.inner_load_command_map.args = innerself.inner_load_command_line_args;
+        innerself.inner_load_command_map.command = innerself.inner_load_command_subparser;
+        innerself.inner_load_command_map.prefix = innerself.inner_load_command_prefix;
+        innerself.inner_load_command_map.count = innerself.inner_load_command_line_base;
+        innerself.inner_load_command_map.help = innerself.inner_load_command_line_base;
+        innerself.inner_load_command_map.jsonfile = innerself.inner_load_command_line_base;
+
+
+        innerself.opt_parse_handle_map = {};
+        innerself.opt_parse_handle_map.string = innerself.inner_string_action;
+        innerself.opt_parse_handle_map.unicode = innerself.inner_string_action;
+        innerself.opt_parse_handle_map.boolean = innerself.inner_bool_action;
+        innerself.opt_parse_handle_map.int = innerself.inner_int_action;
+        innerself.opt_parse_handle_map.long = innerself.inner_int_action;
+        innerself.opt_parse_handle_map.array = innerself.inner_append_action;
+        innerself.opt_parse_handle_map.count = innerself.inner_inc_action;
+        innerself.opt_parse_handle_map.help = innerself.inner_help_action;
+        innerself.opt_parse_handle_map.jsonfile = innerself.inner_jsonfile_action;
+        innerself.opt_parse_handle_map.command = innerself.inner_command_action;
+        innerself.opt_parse_handle_map.float = innerself.innner_float_action;
         innerself.load_priority = opt.priority;
-        innerself.parse_set_map = {
-            SUB_COMMAND_JSON_SET: innerself.inner_parse_sub_command_json_set,
-            COMMAND_JSON_SET: innerself.inner_parse_command_json_set,
-            ENVIRONMENT_SET: innerself.inner_parse_environment_set,
-            ENV_SUB_COMMAND_JSON_SET: innerself.inner_parse_env_subcommand_json_set,
-            ENV_COMMAND_JSON_SET: innerself.inner_parse_env_command_json_set
-        };
-        innerself.set_json_value = {
-            string: innerself.inner_json_value_base,
-            unicode: innerself.inner_json_value_base,
-            boolean: innerself.inner_json_value_base,
-            int: innerself.inner_json_value_base,
-            long: innerself.inner_json_value_base,
-            array: innerself.inner_json_value_base,
-            count: innerself.inner_json_value_base,
-            jsonfile: innerself.inner_json_value_base,
-            float: innerself.inner_json_value_base,
-            command: innerself.inner_json_value_error,
-            help: innerself.inner_json_value_error
-        };
+
+        innerself.parse_set_map = {};
+        innerself.parse_set_map.SUB_COMMAND_JSON_SET = innerself.inner_parse_sub_command_json_set;
+        innerself.parse_set_map.COMMAND_JSON_SET = innerself.inner_parse_command_json_set;
+        innerself.parse_set_map.ENVIRONMENT_SET = innerself.inner_parse_environment_set;
+        innerself.parse_set_map.ENV_SUB_COMMAND_JSON_SET = innerself.inner_parse_env_subcommand_json_set;
+        innerself.parse_set_map.ENV_COMMAND_JSON_SET = innerself.inner_parse_env_command_json_set;
+
+        innerself.set_json_value = {};
+        innerself.set_json_value.string = innerself.inner_json_value_base;
+        innerself.set_json_value.unicode = innerself.inner_json_value_base;
+        innerself.set_json_value.boolean = innerself.inner_json_value_base;
+        innerself.set_json_value.int = innerself.inner_json_value_base;
+        innerself.set_json_value.long = innerself.inner_json_value_base;
+        innerself.set_json_value.array = innerself.inner_json_value_base;
+        innerself.set_json_value.count = innerself.inner_json_value_base;
+        innerself.set_json_value.jsonfile = innerself.inner_json_value_base;
+        innerself.set_json_value.float = innerself.inner_json_value_base;
+        innerself.set_json_value.command = innerself.inner_json_value_error;
+        innerself.set_json_value.help = innerself.inner_json_value_error;
+
         return self;
     };
 
