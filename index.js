@@ -1776,6 +1776,7 @@ function ExtArgsParse(option) {
             self.error_msg(util.format('input parameter (%s) not object', d));
         }
         innerself.inner_load_command_line_inner('', d, null);
+        self.info(' ');
         return;
     };
 
@@ -1795,6 +1796,7 @@ function ExtArgsParse(option) {
             self.error_msg(util.format('(%s) not valid json string\n%s', s, self.inner_get_except_info(e)));
         }
         self.load_command_line(d);
+        self.info(' ');
         return;
     };
 
@@ -2051,6 +2053,7 @@ function ExtArgsParse(option) {
         var copychk;
         var curopt;
         var bval;
+        var parentlen = parentpath.length;
 
         if (!not_null(paths)) {
             paths = null;
@@ -2062,8 +2065,8 @@ function ExtArgsParse(option) {
         if (not_null(paths)) {
             parentpath = paths;
         }
-        for (idx = 0; idx < parentpath.splice(-1).subcommands.length; idx += 1) {
-            chld = parentpath.splice(-1).subcommands[idx];
+        for (idx = 0; idx < parentpath[(parentlen - 1)].subcommands.length; idx += 1) {
+            chld = parentpath[(parentlen - 1)].subcommands[idx];
             curpath = parentpath;
             curpath.push(chld);
             copychk = new OptCheck();
@@ -2072,8 +2075,8 @@ function ExtArgsParse(option) {
             curpath.pop();
         }
 
-        for (idx = 0; parentpath.splice(-1).cmdopts.length; idx += 1) {
-            curopt = parentpath.splice(-1).cmdopts[idx];
+        for (idx = 0; parentpath[(parentlen - 1)].cmdopts.length; idx += 1) {
+            curopt = parentpath[(parentlen - 1)].cmdopts[idx];
             if (curopt.isflag) {
                 if (curopt.typename !== 'args' && curopt.typename !== 'help') {
                     bval = optcheck.add_and_check('varname', curopt.varname);
@@ -2107,27 +2110,32 @@ function ExtArgsParse(option) {
         var setted = false;
         var cmdname;
         var curkey;
+        var parentlen = parentpath.length;
         if (!not_null(paths)) {
             paths = null;
         }
         if (not_null(paths)) {
             parentpath = paths;
         }
-        for (idx = 0; idx < parentpath.splice(-1).subcommands.length; idx += 1) {
-            chld = parentpath.splice(-1).subcommands[idx];
+        self.info(' ');
+        for (idx = 0; idx < parentpath[(parentlen - 1)].subcommands.length; idx += 1) {
+            chld = parentpath[(parentlen - 1)].subcommands[idx];
             curpath = parentpath;
             curpath.push(chld);
             innerself.inner_set_command_line_self_args_inner(curpath);
             curpath.pop();
         }
+        self.info(' ');
 
-        for (idx = 0; idx < parentpath.splice(-1).cmdopts; idx += 1) {
-            curopt = parentpath.splice(-1).cmdopts[idx];
+        for (idx = 0; idx < parentpath[(parentlen - 1)].cmdopts; idx += 1) {
+            curopt = parentpath[(parentlen - 1)].cmdopts[idx];
             if (curopt.isflag && curopt.typename === 'args') {
                 setted = true;
                 break;
             }
         }
+
+        self.info(' ');
 
         if (!setted) {
             cmdname = innerself.inner_format_cmd_from_cmd_array(parentpath);
@@ -2137,6 +2145,8 @@ function ExtArgsParse(option) {
             curkey = keyparse.KeyParser('', '$', '*', true);
             innerself.inner_load_command_line_args('', curkey, parentpath);
         }
+
+        self.info(' ');
         return;
     };
 
@@ -2144,7 +2154,7 @@ function ExtArgsParse(option) {
         if (innerself.ended !== 0) {
             return;
         }
-        innerself.inner_set_command_line_self_args(paths);
+        innerself.inner_set_command_line_self_args_inner(paths);
         innerself.inner_check_varname_inner();
         innerself.ended = 1;
     };
@@ -2157,11 +2167,15 @@ function ExtArgsParse(option) {
             var prefix;
             var jsondest;
             var dummycmds;
+            var jdx;
             cmds = innerself.inner_find_commands_in_path(args.subcommand);
             idx = cmds.length;
             while (idx >= 2) {
-                dummycmds = cmds.slice();
-                subname = innerself.inner_format_cmd_from_cmd_array(dummycmds.splice(0, (idx + 1)));
+                dummycmds = [];
+                for (jdx = 0; jdx < (idx); jdx += 1) {
+                    dummycmds.push(cmds[jdx]);
+                }
+                subname = innerself.inner_format_cmd_from_cmd_array(dummycmds);
                 prefix = subname.replace('.', '_');
                 jsondest = util.format('%s_%s', prefix, innerself.jsonlong);
                 if (not_null(args[jsondest])) {
@@ -2192,11 +2206,15 @@ function ExtArgsParse(option) {
             var prefix;
             var jsondest;
             var ccmds;
+            var jdx;
             cmds = innerself.inner_find_commands_in_path(args.subcommand);
             idx = cmds.length;
             while (idx >= 2) {
-                ccmds = cmds.slice();
-                subname = innerself.inner_format_cmd_from_cmd_array(ccmds.splice(0, (idx + 1)));
+                ccmds = [];
+                for (jdx = 0; jdx < (idx); jdx += 1) {
+                    ccmds.push(cmds[jdx]);
+                }
+                subname = innerself.inner_format_cmd_from_cmd_array(ccmds);
                 prefix = subname.replace('.', '_');
                 jsondest = util.format('%s_%s', prefix, innerself.jsonlong);
                 jsondest = jsondest.replace('-', '_');
@@ -2232,16 +2250,14 @@ function ExtArgsParse(option) {
     innerself.inner_set_args = function (args, cmdpaths, vals) {
         var argkeycls = null;
         var cmdname;
-        var ccmdpaths;
         var lastcmd;
         var curopt;
         var keyname;
         var idx;
+        var ccmdpathslen = cmdpaths.length;
         cmdname = innerself.inner_format_cmdname_path(cmdpaths);
-        ccmdpaths = cmdpaths.slice();
-        self.info(util.format('[%s] %s', cmdname, self.format_string(ccmdpaths.splice(-1).cmdopts)));
-        ccmdpaths = cmdpaths.slice();
-        lastcmd = ccmdpaths.splice(-1);
+        self.info(util.format('[%s] %s', cmdname, self.format_string(cmdpaths[(ccmdpathslen - 1)].cmdopts)));
+        lastcmd = cmdpaths[(ccmdpathslen - 1)];
         for (idx = 0; idx < lastcmd.cmdopts.length; idx += 1) {
             curopt = lastcmd.cmdopts[idx];
             if (curopt.isflag && curopt.flagname === '$') {
@@ -2306,7 +2322,6 @@ function ExtArgsParse(option) {
     };
 
     self.parse_args = function (params) {
-        var cpargs = process.argv.slice();
         var parsestate = null;
         var validx;
         var optval;
@@ -2316,16 +2331,24 @@ function ExtArgsParse(option) {
         var nargs;
         var args;
         var jdx;
+        var kdx;
+        self.info(' ');
         if (!not_null(params)) {
-            params = cpargs.splice(2);
+            params = [];
+            for (kdx = 0; kdx < process.argv.length; kdx += 1) {
+                params.push(process.argv[kdx]);
+            }
         }
+        self.info(' ');
         parsestate = new ParseState(params, innerself.maincmd, innerself.options);
         args = {};
         try {
+            self.info(' ');
             while (true) {
                 keycls = parsestate.step_one();
                 optval = parsestate.get_optval();
                 validx = parsestate.get_validx();
+                self.info(util.format('keycls [%s] optval [%s] validx [%s]', keycls, optval, validx));
                 nargs = 0;
                 if (!not_null(keycls)) {
                     cmdpaths = parsestate.get_cmd_paths();
@@ -2378,34 +2401,41 @@ function ExtArgsParse(option) {
     };
 
     self.parse_command_line = function (params, Context, mode) {
-        var cargs;
         var pushmode = false;
         var args;
         var funcname;
         var cmds;
         var getmode = null;
         var idx;
+        var kdx;
         if (not_null(mode)) {
             pushmode = true;
             innerself.output_mode.push(mode);
         }
 
+        self.info(' ');
         args = {};
         try {
+            self.info(' ');
             innerself.inner_set_command_line_self_args();
             if (!not_null(params)) {
-                cargs = process.argv.slice();
-                params = cargs.splice(2);
+                params = [];
+                for (kdx = 2; kdx < process.argv.length; kdx += 1) {
+                    params.push(process.argv[kdx]);
+                }
             }
+            self.info(' ');
             args = self.parse_args(params);
             innerself.load_priority.forEach(function (elm) {
                 self.info(util.format('priority %s', elm));
                 args = innerself.parse_set_map[elm](args);
             });
+            self.info(' ');
             args = innerself.inner_set_default_value(args);
             if (not_null(args.subcommand)) {
                 cmds = innerself.inner_find_commands_in_path(args.subcommand);
-                funcname = cmds.splice(-1).keycls.function;
+                kdx = cmds.length;
+                funcname = cmds[(kdx - 1)].keycls.function;
                 if (innerself.output_mode.length > 0) {
                     idx = (innerself.output_mode.length - 1);
                     getmode = innerself.output_mode[idx];
@@ -2428,9 +2458,10 @@ function ExtArgsParse(option) {
 
     innerself.inner_get_subcommands = function (cmdname, cmdpaths) {
         var retnames = null;
-        var copycmd;
         var sarr;
         var copysarr;
+        var cmdpathslen;
+        var kdx;
         if (!not_null(cmdpaths)) {
             cmdpaths = null;
         }
@@ -2441,20 +2472,23 @@ function ExtArgsParse(option) {
 
         if (!not_null(cmdname) || cmdname.length === 0) {
             retnames = [];
-            copycmd = cmdpaths.slice();
-            copycmd.splice(-1).subcommands.forEach(function (c) {
+            cmdpathslen = cmdpaths.length;
+            cmdpaths[(cmdpathslen - 1)].subcommands.forEach(function (c) {
                 retnames.push(c);
             });
             return retnames.sort();
         }
 
         sarr = cmdname.split('.');
-        copycmd = cmdpaths.slice();
-        copycmd.splice(-1).subcommands.forEach(function (c) {
+        cmdpathslen = cmdpaths.length;
+        cmdpaths[(cmdpathslen - 1)].subcommands.forEach(function (c) {
             if (c.cmdname === sarr[0]) {
                 cmdpaths.push(c);
-                copysarr = sarr.slice();
-                return innerself.inner_get_subcommands(copysarr.splice(1).join('.'), cmdpaths);
+                copysarr = [];
+                for (kdx = 1; kdx < sarr.length; kdx += 1) {
+                    copysarr.push(sarr[kdx]);
+                }
+                return innerself.inner_get_subcommands(copysarr.join('.'), cmdpaths);
             }
         });
         return retnames.sort();
@@ -2465,21 +2499,30 @@ function ExtArgsParse(option) {
         var copycmds;
         var sarr;
         var copysarr;
+        var cmdpathslen;
+        var kdx;
         if (!not_null(cmdpaths)) {
             cmdpaths = [innerself.maincmd];
         }
         if (!not_null(cmdname) || cmdname.length === 0) {
-            copycmds = cmdpaths.slice();
-            retkey = copycmds.splice(-1).keycls;
+            cmdpathslen = cmdpaths.length;
+            retkey = cmdpaths[(cmdpathslen - 1)].keycls;
             return retkey;
         }
         sarr = cmdname.split('.');
-        copysarr = sarr.slice();
-        copysarr.splice(-1).subcommands.forEach(function (c) {
+        cmdpathslen = sarr.length;
+        sarr[(cmdpathslen - 1)].subcommands.forEach(function (c) {
             if (c.cmdname === sarr[0]) {
-                copycmds = cmdpaths.slice();
+                copycmds = [];
+                for (kdx = 0; kdx < cmdpaths.length; kdx += 1) {
+                    copycmds.push(cmdpaths[kdx]);
+                }
                 copycmds.push(c);
-                return innerself.inner_get_cmdkey(copysarr.splice(1).join('.'), copycmds);
+                copysarr = [];
+                for (kdx = 1; kdx < sarr.length; kdx += 1) {
+                    copysarr.push(sarr[kdx]);
+                }
+                return innerself.inner_get_cmdkey(copysarr.join('.'), copycmds);
             }
         });
         return null;
@@ -2536,21 +2579,32 @@ function ExtArgsParse(option) {
         var retopts = null;
         var copycmds;
         var sarr;
+        var cmdpathslen;
+        var kdx;
+        var copysarr;
         if (!not_null(cmdpaths)) {
             cmdpaths = [innerself.maincmd];
         }
 
         if (!not_null(cmdname) || cmdname.length === 0) {
-            copycmds = cmdpaths.slice();
-            retopts = copycmds.splice(-1).cmdopts;
+            cmdpathslen = cmdpaths.length;
+            retopts = cmdpaths[(cmdpathslen - 1)].cmdopts;
             return innerself.inner_sort_cmdopts(retopts);
         }
         sarr = cmdname.split('.');
-        copycmds = cmdpaths.slice();
-        copycmds.splice(-1).subcommands.forEach(function (curcmd) {
+        cmdpathslen = cmdpaths.length;
+        cmdpaths[(cmdpathslen - 1)].subcommands.forEach(function (curcmd) {
             if (curcmd.cmdname === sarr[0]) {
-                cmdpaths.push(curcmd);
-                return innerself.inner_get_cmdopts(copycmds.splice(1).join('.'), cmdpaths);
+                copycmds = [];
+                for (kdx = 0; kdx < cmdpathslen; kdx += 1) {
+                    copycmds.push(cmdpaths[kdx]);
+                }
+                copycmds.push(curcmd);
+                copysarr = [];
+                for (kdx = 1; kdx < sarr.length; kdx += 1) {
+                    copysarr.push(sarr[kdx]);
+                }
+                return innerself.inner_get_cmdopts(copysarr.join('.'), copycmds);
             }
         });
         return null;
