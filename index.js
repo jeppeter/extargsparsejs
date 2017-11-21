@@ -334,6 +334,7 @@ function ParserCompat(keycls, opt) {
                     opthelp += util.format('%s set true default(False)', optcmd.optdest);
                 }
             } else if ((optcmd.typename === 'string' && optcmd.value === '+') || optcmd.typename === 'count') {
+                self.info(' ');
                 if (optcmd.isflag) {
                     opthelp += util.format('%s inc', optcmd.optdest);
                 } else {
@@ -344,6 +345,7 @@ function ParserCompat(keycls, opt) {
             } else if (optcmd.typename === 'help') {
                 opthelp += 'to display this help information';
             } else {
+                self.info(' ');
                 if (optcmd.isflag) {
                     opthelp += util.format('%s set default(%s)', optcmd.optdest, optcmd.value);
                 } else {
@@ -679,6 +681,7 @@ function ParseState(args, maincmd, optattr) {
     if (!not_null(optattr)) {
         optattr = new ExtArgsOption();
     }
+    self.info(util.format('args [%s]', args));
 
     innerself.inner_init_fn = function () {
         innerself.cmdpaths = [maincmd];
@@ -689,6 +692,7 @@ function ParseState(args, maincmd, optattr) {
         innerself.keyidx = -1;
         innerself.validx = -1;
         innerself.args = args;
+        self.info(util.format('innerself.args [%s]', innerself.args));
         innerself.ended = 0;
         innerself.longprefix = optattr.longprefix;
         innerself.shortprefix = optattr.shortprefix;
@@ -767,10 +771,13 @@ function ParseState(args, maincmd, optattr) {
         var keycls;
         var curopt;
         var jdx;
+        self.info(' ');
         if (innerself.ended > 0) {
+            self.info(' ');
             return null;
         }
 
+        self.info(' ');
         if (innerself.longargs >= 0) {
             assert.ok(innerself.curcharidx < 0, util.format('curcharidx[%d] < 0', innerself.curcharidx));
             innerself.curidx += innerself.longargs;
@@ -778,6 +785,8 @@ function ParseState(args, maincmd, optattr) {
             innerself.validx = -1;
             innerself.keyidx = -1;
         }
+
+        self.info(util.format('innerself.args [%s]', innerself.args));
         oldcharidx = innerself.curcharidx;
         oldidx = innerself.curidx;
         if (oldidx >= innerself.args.length) {
@@ -788,8 +797,10 @@ function ParseState(args, maincmd, optattr) {
             innerself.keyidx = -1;
             innerself.validx = -1;
             innerself.ended = 1;
+            self.info(' ');
             return null;
         }
+        self.info(' ');
         if (oldcharidx >= 0) {
             c = innerself.args[oldidx];
             if (c.length <= oldcharidx) {
@@ -805,8 +816,10 @@ function ParseState(args, maincmd, optattr) {
                 innerself.keyidx = -1;
                 innerself.validx = -1;
                 innerself.longargs = -1;
+                self.info(' ');
                 return innerself.inner_find_key_cls();
             }
+            self.info(' ');
             curch = c[oldcharidx];
             self.info(util.format('argv[%d][%d] %s', oldidx, oldcharidx, curch));
             idx = innerself.cmdpaths.length - 1;
@@ -814,6 +827,7 @@ function ParseState(args, maincmd, optattr) {
                 curcmd = innerself.cmdpaths[idx];
                 for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                     curopt = curcmd.cmdopts[jdx];
+                    self.info(' ');
                     if (curopt.isflag && curopt.flagname !== '$' && not_null(curopt.shortflag)) {
                         if (curopt.shortflag === curch) {
                             innerself.keyidx = oldidx;
@@ -831,6 +845,7 @@ function ParseState(args, maincmd, optattr) {
                 throw new Error(util.format('can not parse (%s)', innerself.args[oldidx]));
             }
         } else {
+            self.info(' ');
             if (innerself.bundlemode) {
                 curarg = innerself.args[oldidx];
                 if (curarg.startsWith(innerself.longprefix)) {
@@ -846,13 +861,17 @@ function ParseState(args, maincmd, optattr) {
                             copyargs = innerself.args.slice();
                             innerself.leftargs = innerself.leftargs.concat(copyargs.splice(innerself.curidx));
                         }
+                        self.info(' ');
                         return null;
                     }
                     idx = innerself.cmdpaths.length - 1;
+                    self.info(' ');
                     while (idx >= 0) {
+                        self.info(' ');
                         curcmd = innerself.cmdpaths[idx];
                         for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                             curopt = curcmd.cmdopts[jdx];
+                            self.info(' ');
                             if (curopt.isflag && curopt.flagname !== '$') {
                                 self.info(util.format('[%d]longopt %s curarg %s', idx, curopt.longopt, curarg));
                                 if (curopt.longopt === curarg) {
@@ -874,6 +893,7 @@ function ParseState(args, maincmd, optattr) {
                         throw new Error(util.format('can not parse [%s]', innerself.args[oldidx]));
                     }
                 } else if (curarg.startsWith(innerself.shortprefix)) {
+                    self.info(' ');
                     if (curarg === innerself.shortprefix) {
                         if (innerself.parseall) {
                             innerself.leftargs.push(curarg);
@@ -884,8 +904,10 @@ function ParseState(args, maincmd, optattr) {
                             innerself.shortcharargs = -1;
                             innerself.keyidx = -1;
                             innerself.validx = -1;
+                            self.info(' ');
                             return innerself.inner_find_key_cls();
                         } else {
+                            self.info(' ');
                             innerself.ended = 1;
                             copyargs = innerself.args.slice();
                             innerself.leftargs = innerself.leftargs.concat(copyargs.splice(oldidx));
@@ -901,16 +923,19 @@ function ParseState(args, maincmd, optattr) {
                     oldcharidx = innerself.shortprefix.length;
                     innerself.curidx = oldidx;
                     innerself.curcharidx = oldcharidx;
+                    self.info(' ');
                     return innerself.inner_find_key_cls();
                 }
             } else {
                 /* not bundle mode */
+                self.info(' ');
                 idx = innerself.cmdpaths.length - 1;
                 curarg = innerself.args[oldidx];
                 while (idx >= 0) {
                     curcmd = innerself.cmdpaths[idx];
                     for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                         curopt = curcmd.cmdopts[jdx];
+                        self.info(' ');
                         if (curopt.isflag && curopt.flagname !== '$') {
                             self.info(util.format('[%d](%s) curarg [%s]', idx, curopt.longopt, curarg));
                             if (curopt.longopt === curarg) {
@@ -921,6 +946,7 @@ function ParseState(args, maincmd, optattr) {
                                 self.info(util.format('oldidx %d (len %d)', oldidx, innerself.args.length));
                                 innerself.curidx = (oldidx + 1);
                                 innerself.curcharidx = -1;
+                                self.info(' ');
                                 return curopt;
                             }
                         }
@@ -928,11 +954,14 @@ function ParseState(args, maincmd, optattr) {
                     idx -= 1;
                 }
 
+                self.info(' ');
                 idx = innerself.cmdpaths.length - 1;
                 while (idx >= 0) {
+                    self.info(' ');
                     curcmd = innerself.cmdpaths[idx];
                     for (jdx = 0; jdx < curcmd.cmdopts.length; jdx += 1) {
                         curopt = curcmd.cmdopts[jdx];
+                        self.info(' ');
                         if (curopt.isflag && curopt.flagname !== '$') {
                             if (not_null(curopt.shortopt) && curopt.shortopt === curarg) {
                                 innerself.keyidx = oldidx;
@@ -943,6 +972,7 @@ function ParseState(args, maincmd, optattr) {
                                 innerself.curidx = oldidx;
                                 innerself.curcharidx = curopt.shortopt.length;
                                 self.info('[%s]shortopt (%s)', oldidx, curopt.shortopt);
+                                self.info(' ');
                                 return curopt;
                             }
                         }
@@ -952,6 +982,7 @@ function ParseState(args, maincmd, optattr) {
             }
         }
 
+        self.info(' ');
         /*come here because we may be the command*/
         keycls = innerself.inner_find_sub_command(innerself.args[oldidx]);
         if (!not_null(keycls)) {
@@ -962,9 +993,11 @@ function ParseState(args, maincmd, optattr) {
             innerself.curcharidx = -1;
             innerself.shortcharargs = -1;
             innerself.longargs = -1;
+            self.info(' ');
             return keycls;
         }
 
+        self.info(' ');
         if (not_null(innerself.parseall) && innerself.parseall) {
             innerself.leftargs.push(innerself.args[oldidx]);
             oldidx += 1;
@@ -974,6 +1007,7 @@ function ParseState(args, maincmd, optattr) {
             innerself.curcharidx = -1;
             innerself.shortcharargs = -1;
             innerself.longargs = -1;
+            self.info(' ');
             return innerself.inner_find_key_cls();
         }
         /* this is over */
@@ -985,30 +1019,38 @@ function ParseState(args, maincmd, optattr) {
         innerself.curcharidx = -1;
         innerself.shortcharargs = -1;
         innerself.longargs = -1;
+        self.info(' ');
         return null;
     };
 
     self.step_one = function () {
         var curopt = null;
+        self.info(' ');
         if (innerself.ended > 0) {
             self.info(util.format('args %s __curidx %d', innerself.args, innerself.curidx));
             innerself.optval = innerself.leftargs;
             innerself.validx = innerself.curidx;
+            self.info(' ');
             return null;
         }
+        self.info(' ');
         curopt = innerself.inner_find_key_cls();
         if (!not_null(curopt)) {
+            self.info(util.format('idx [%d] args[%s]', innerself.curidx, innerself.args));
             assert.ok(innerself.ended > 0, util.format('not ended [%d] > 0', innerself.ended));
             innerself.optval = innerself.leftargs;
             innerself.validx = innerself.curidx;
+            self.info(' ');
             return null;
         }
 
+        self.info(' ');
         if (!curopt.iscmd) {
             innerself.optval = curopt.optdest;
         } else {
             innerself.optval = self.format_cmdname_path(innerself.cmdpaths);
         }
+        self.info(' ');
         return curopt;
     };
 
@@ -1028,7 +1070,7 @@ function ParseState(args, maincmd, optattr) {
         return innerself.curidx;
     };
 
-    return self;
+    return innerself.inner_init_fn();
 }
 
 set_property_value(exports, 'COMMAND_SET', 'COMMAND_SET');
@@ -1351,6 +1393,7 @@ function ExtArgsParse(option) {
         self.info(util.format('cmdopts [%s]', lastparser.cmdopts));
         for (idx = 0; idx < lastparser.cmdopts.length; idx += 1) {
             curopt = lastparser.cmdopts[idx];
+            self.info(' ');
             if (curopt.isflag && curopt.flagname !== '$' && keycls.flagname !== '$') {
                 if (curopt.typename !== 'help' && keycls.typename !== 'help') {
                     if (curopt.optdest === keycls.optdest) {
@@ -1390,6 +1433,7 @@ function ExtArgsParse(option) {
         if (!not_null(curparser)) {
             curparser = null;
         }
+        self.info(' ');
         if (keycls.isflag && keycls.flagname !== '$' && reserved_args.indexOf(keycls.flagname) >= 0) {
             self.error_msg(util.format('(%s) in reserved_args (%s)', keycls.flagname, reserved_args));
         }
@@ -1782,7 +1826,10 @@ function ExtArgsParse(option) {
 
     innerself.inner_get_except_info = function (e) {
         var rets = '';
-        rets += util.format('exception: %s\n', e);
+        rets += util.format('exception: %s\n', util.inspect(e, {
+            showHidden: true,
+            depth: null
+        }));
         rets += 'trace back:\n';
         rets += innerself.inner_get_full_trace_back(2, 1, 0);
         return rets;
@@ -1860,6 +1907,7 @@ function ExtArgsParse(option) {
 
         for (idx = 0; idx < cmd.cmdopts.length; idx += 1) {
             curopt = cmd.cmdopts[idx];
+            self.info(' ');
             if (curopt.isflag && curopt.typename !== 'prefix' && curopt.typename !== 'args' && curopt.typename !== 'help') {
                 if (curopt.optdest === key) {
                     if (!innerself.inner_get_args_accessed(key)) {
@@ -1942,6 +1990,7 @@ function ExtArgsParse(option) {
         }
         for (idx = 0; idx < cmd.cmdopts.length; idx += 1) {
             curopt = cmd.cmdopts[idx];
+            self.info(' ');
             if (curopt.isflag && curopt.typename !== 'prefix' && curopt.typename !== 'args' && curopt.typename !== 'help') {
                 args = innerself.inner_set_jsonvalue_not_defined(args, cmd, curopt.optdest, curopt.value);
             }
@@ -1970,6 +2019,7 @@ function ExtArgsParse(option) {
 
         for (idx = 0; idx < cmd.cmdopts.length; idx += 1) {
             keycls = cmd.cmdopts[idx];
+            self.info(' ');
             if (keycls.isflag && keycls.typename !== 'prefix' && keycls.typename !== 'args' && keycls.typename !== 'help') {
                 optdest = keycls.optdest;
                 oldopt = optdest;
@@ -2075,8 +2125,9 @@ function ExtArgsParse(option) {
             curpath.pop();
         }
 
-        for (idx = 0; parentpath[(parentlen - 1)].cmdopts.length; idx += 1) {
+        for (idx = 0; idx < parentpath[(parentlen - 1)].cmdopts.length; idx += 1) {
             curopt = parentpath[(parentlen - 1)].cmdopts[idx];
+            self.info(util.format('curopt [%s]', curopt));
             if (curopt.isflag) {
                 if (curopt.typename !== 'args' && curopt.typename !== 'help') {
                     bval = optcheck.add_and_check('varname', curopt.varname);
@@ -2129,6 +2180,7 @@ function ExtArgsParse(option) {
 
         for (idx = 0; idx < parentpath[(parentlen - 1)].cmdopts; idx += 1) {
             curopt = parentpath[(parentlen - 1)].cmdopts[idx];
+            self.info(' ');
             if (curopt.isflag && curopt.typename === 'args') {
                 setted = true;
                 break;
@@ -2260,6 +2312,7 @@ function ExtArgsParse(option) {
         lastcmd = cmdpaths[(ccmdpathslen - 1)];
         for (idx = 0; idx < lastcmd.cmdopts.length; idx += 1) {
             curopt = lastcmd.cmdopts[idx];
+            self.info(' ');
             if (curopt.isflag && curopt.flagname === '$') {
                 argkeycls = curopt;
                 break;
@@ -2341,12 +2394,16 @@ function ExtArgsParse(option) {
         }
         self.info(' ');
         parsestate = new ParseState(params, innerself.maincmd, innerself.options);
+        self.info(util.format('parsestate [%s]', parsestate));
         args = {};
         try {
             self.info(' ');
             while (true) {
+                self.info(' ');
                 keycls = parsestate.step_one();
+                self.info(' ');
                 optval = parsestate.get_optval();
+                self.info(' ');
                 validx = parsestate.get_validx();
                 self.info(util.format('keycls [%s] optval [%s] validx [%s]', keycls, optval, validx));
                 nargs = 0;
