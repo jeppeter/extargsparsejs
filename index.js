@@ -1917,6 +1917,7 @@ function ExtArgsParse(option) {
             curopt = cmd.cmdopts[idx];
             if (curopt.isflag && curopt.typename !== 'prefix' && curopt.typename !== 'args' && curopt.typename !== 'help') {
                 if (curopt.optdest === key) {
+                    self.info(util.format('set key [%s] =[%s]', key, value));
                     if (!innerself.inner_get_args_accessed(key)) {
                         if (keyparse.get_value_type(curopt.value) !== keyparse.get_value_type(value)) {
                             self.warn(util.format('%s  type (%s) as default value type (%s)', key, keyparse.get_value_type(value), keyparse.get_value_type(curopt.value)));
@@ -1938,22 +1939,29 @@ function ExtArgsParse(option) {
         var keys = Object.keys(jsonvalue);
         var newprefix;
         var newkey;
-        for (idx = 0; idx < keys.length; idx += 1) {
-            k = keys[idx];
-            if (typeof jsonvalue[k] === 'object') {
-                newprefix = '';
-                if (prefix.length > 0) {
-                    newprefix += util.formt('%s_', prefix);
+        self.info(util.format('prefix [%s] jsonvalue [%s]', prefix, self.format_string(jsonvalue)));
+        if (Array.isArray(jsonvalue)) {
+            newkey = prefix;
+            args = innerself.inner_set_jsonvalue_not_defined(args, innerself.maincmd, newkey, jsonvalue);
+        } else {
+            for (idx = 0; idx < keys.length; idx += 1) {
+                k = keys[idx];
+                if (typeof jsonvalue[k] === 'object') {
+                    newprefix = '';
+                    if (prefix.length > 0) {
+                        newprefix += util.format('%s_', prefix);
+                    }
+                    newprefix += k;
+                    args = innerself.inner_load_jsonvalue(args, newprefix, jsonvalue[k]);
+                } else {
+                    newkey = '';
+                    if (prefix.length > 0) {
+                        newkey += util.format('%s_', prefix);
+                    }
+                    newkey += k;
+                    self.info(util.format('newkey [%s] value [%s][%s]', newkey, k, jsonvalue[k]));
+                    args = innerself.inner_set_jsonvalue_not_defined(args, innerself.maincmd, newkey, jsonvalue[k]);
                 }
-                newprefix += k;
-                args = innerself.inner_load_jsonvalue(args, newprefix, jsonvalue[k]);
-            } else {
-                newkey = '';
-                if (prefix.length > 0) {
-                    newkey += util.format('%s_', prefix);
-                }
-                newkey += k;
-                args = innerself.inner_set_jsonvalue_not_defined(args, innerself.maincmd, newkey, jsonvalue[k]);
             }
         }
         return args;
@@ -2465,6 +2473,7 @@ function ExtArgsParse(option) {
         var getmode = null;
         var idx;
         var kdx;
+        var prioelm;
         if (not_null(mode)) {
             pushmode = true;
             innerself.output_mode.push(mode);
@@ -2482,10 +2491,11 @@ function ExtArgsParse(option) {
 
             args = self.parse_args(params);
             self.info(util.format('load_priority {%s}', innerself.load_priority));
-            innerself.load_priority.forEach(function (elm) {
-                self.info(util.format('priority %s', elm));
-                args = innerself.parse_set_map[elm](args);
-            });
+            for (idx = 0; idx < innerself.load_priority.length; idx += 1) {
+                prioelm = innerself.load_priority[idx];
+                self.info(util.format('priority %s', prioelm));
+                args = innerself.parse_set_map[prioelm](args);
+            }
 
             args = innerself.inner_set_default_value(args);
             self.info(util.format('args [%s]', util.inspect(args, {
