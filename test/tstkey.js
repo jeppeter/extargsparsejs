@@ -48,7 +48,6 @@ var opt_fail_check = function (t, keycls) {
 
 
 
-
 test('A001', function (t) {
     'use strict';
     var keycls;
@@ -126,8 +125,8 @@ test('A005', function (t) {
     'use strict';
     var keycls;
     keycls = keyparse.KeyParser('', 'flag<flag.main>##help for flag##', '', true);
-    t.equal(keycls.cmdname, null , get_notice(t, 'cmdname'));
-    t.equal(keycls.function, null , get_notice(t, 'function'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
     t.equal(keycls.typename, 'string', get_notice(t, 'typename'));
     t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
     t.equal(keycls.flagname, 'flag', get_notice(t, 'flagname'));
@@ -237,7 +236,7 @@ test('A011', function (t) {
 
 test('A012', function (t) {
     'use strict';
-    var keycls ;
+    var keycls;
     keycls = keyparse.KeyParser('', '$flag|f<flag.main>', {}, false);
     t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
     t.equal(keycls.value, null, get_notice(t, 'value'));
@@ -594,16 +593,16 @@ test('A031', function (t) {
 test('A032', function (t) {
     'use strict';
     var keycls;
-    keycls = keyparse.KeyParser('','$<numargs>','+',false);
-    t.equal(keycls.flagname, '$', get_notice(t,'flagname'));
-    t.equal(keycls.prefix, '', get_notice(t,'prefix'));
-    t.equal(keycls.value, null, get_notice(t,'value'));
-    t.equal(keycls.typename, 'args', get_notice(t,'typename'));
-    t.equal(keycls.helpinfo, null, get_notice(t,'helpinfo'));
-    t.equal(keycls.shortflag, null, get_notice(t,'shortflag'));
-    t.equal(keycls.cmdname, null, get_notice(t,'cmdname'));
-    t.equal(keycls.function, null, get_notice(t,'function'));
-    t.equal(keycls.varname, 'numargs', get_notice(t,'varname'));
+    keycls = keyparse.KeyParser('', '$<numargs>', '+', false);
+    t.equal(keycls.flagname, '$', get_notice(t, 'flagname'));
+    t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
+    t.equal(keycls.value, null, get_notice(t, 'value'));
+    t.equal(keycls.typename, 'args', get_notice(t, 'typename'));
+    t.equal(keycls.helpinfo, null, get_notice(t, 'helpinfo'));
+    t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    t.equal(keycls.varname, 'numargs', get_notice(t, 'varname'));
     opt_fail_check(t, keycls);
     t.end();
 });
@@ -611,17 +610,17 @@ test('A032', function (t) {
 test('A033', function (t) {
     'use strict';
     var keycls;
-    keycls = keyparse.KeyParser('','$','+',false);
-    t.equal(keycls.flagname,'$',get_notice(t,'flagname'));
-    t.equal(keycls.prefix, '', get_notice(t,'prefix'));
-    t.equal(keycls.value, null, get_notice(t,'value'));
-    t.equal(keycls.typename, 'args', get_notice(t,'typename'));
-    t.equal(keycls.helpinfo, null, get_notice(t,'helpinfo'));
-    t.equal(keycls.nargs,'+',get_notice(t,'nargs'));
-    t.equal(keycls.shortflag, null, get_notice(t,'shortflag'));
-    t.equal(keycls.cmdname, null, get_notice(t,'cmdname'));
-    t.equal(keycls.function, null, get_notice(t,'function'));
-    t.equal(keycls.varname, 'args', get_notice(t,'varname'));
+    keycls = keyparse.KeyParser('', '$', '+', false);
+    t.equal(keycls.flagname, '$', get_notice(t, 'flagname'));
+    t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
+    t.equal(keycls.value, null, get_notice(t, 'value'));
+    t.equal(keycls.typename, 'args', get_notice(t, 'typename'));
+    t.equal(keycls.helpinfo, null, get_notice(t, 'helpinfo'));
+    t.equal(keycls.nargs, '+', get_notice(t, 'nargs'));
+    t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    t.equal(keycls.varname, 'args', get_notice(t, 'varname'));
     opt_fail_check(t, keycls);
     t.end();
 });
@@ -629,17 +628,17 @@ test('A033', function (t) {
 test('A034', function (t) {
     'use strict';
     var keycls;
-    keycls = keyparse.KeyParser('prefix','$','+',false);
-    t.equal(keycls.flagname,'$',get_notice(t,'flagname'));
-    t.equal(keycls.prefix, 'prefix', get_notice(t,'prefix'));
-    t.equal(keycls.value, null, get_notice(t,'value'));
-    t.equal(keycls.typename, 'args', get_notice(t,'typename'));
-    t.equal(keycls.helpinfo, null, get_notice(t,'helpinfo'));
-    t.equal(keycls.nargs,'+',get_notice(t,'nargs'));
-    t.equal(keycls.shortflag, null, get_notice(t,'shortflag'));
-    t.equal(keycls.cmdname, null, get_notice(t,'cmdname'));
-    t.equal(keycls.function, null, get_notice(t,'function'));
-    t.equal(keycls.varname, 'subnargs', get_notice(t,'varname'));
+    keycls = keyparse.KeyParser('prefix', '$', '+', false);
+    t.equal(keycls.flagname, '$', get_notice(t, 'flagname'));
+    t.equal(keycls.prefix, 'prefix', get_notice(t, 'prefix'));
+    t.equal(keycls.value, null, get_notice(t, 'value'));
+    t.equal(keycls.typename, 'args', get_notice(t, 'typename'));
+    t.equal(keycls.helpinfo, null, get_notice(t, 'helpinfo'));
+    t.equal(keycls.nargs, '+', get_notice(t, 'nargs'));
+    t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    t.equal(keycls.varname, 'subnargs', get_notice(t, 'varname'));
     opt_fail_check(t, keycls);
     t.end();
 });
@@ -647,18 +646,18 @@ test('A034', function (t) {
 test('A035', function (t) {
     'use strict';
     var keycls;
-    keycls = keyparse.KeyParser('prefix','$<newargs>','+',false);
-    t.equal(keycls.flagname,'$',get_notice(t,'flagname'));
-    t.equal(keycls.prefix, 'prefix', get_notice(t,'prefix'));
-    t.equal(keycls.value, null, get_notice(t,'value'));
-    t.equal(keycls.typename, 'args', get_notice(t,'typename'));
-    t.equal(keycls.helpinfo, null, get_notice(t,'helpinfo'));
-    t.equal(keycls.nargs,'+',get_notice(t,'nargs'));
-    t.equal(keycls.shortflag, null, get_notice(t,'shortflag'));
-    t.equal(keycls.cmdname, null, get_notice(t,'cmdname'));
-    t.equal(keycls.function, null, get_notice(t,'function'));
-    t.equal(keycls.varname, 'newargs', get_notice(t,'varname'));
-    t.equal(keycls.attr, undefined, get_notice(t,'attr'));
+    keycls = keyparse.KeyParser('prefix', '$<newargs>', '+', false);
+    t.equal(keycls.flagname, '$', get_notice(t, 'flagname'));
+    t.equal(keycls.prefix, 'prefix', get_notice(t, 'prefix'));
+    t.equal(keycls.value, null, get_notice(t, 'value'));
+    t.equal(keycls.typename, 'args', get_notice(t, 'typename'));
+    t.equal(keycls.helpinfo, null, get_notice(t, 'helpinfo'));
+    t.equal(keycls.nargs, '+', get_notice(t, 'nargs'));
+    t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
+    t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
+    t.equal(keycls.function, null, get_notice(t, 'function'));
+    t.equal(keycls.varname, 'newargs', get_notice(t, 'varname'));
+    t.equal(keycls.attr, undefined, get_notice(t, 'attr'));
     opt_fail_check(t, keycls);
     t.end();
 });
@@ -667,7 +666,7 @@ test('A036', function (t) {
     'use strict';
     var keycls;
     var attr;
-    keycls = keyparse.KeyParser('prefix','$<newargs>!func=args_opt_func;wait=cc!','+',false);
+    keycls = keyparse.KeyParser('prefix', '$<newargs>!func=args_opt_func;wait=cc!', '+', false);
     t.equal(keycls.flagname, '$', get_notice(t, 'flagname'));
     t.equal(keycls.prefix, 'prefix', get_notice(t, 'prefix'));
     t.equal(keycls.value, null, get_notice(t, 'value'));
@@ -690,7 +689,7 @@ test('A037', function (t) {
     'use strict';
     var keycls;
     var attr;
-    keycls = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null,false,true);
+    keycls = keyparse.KeyParser('prefix', 'help|h!func=args_opt_func;wait=cc!', null, false, true);
     t.equal(keycls.flagname, 'help', get_notice(t, 'flagname'));
     t.equal(keycls.prefix, 'prefix', get_notice(t, 'prefix'));
     t.equal(keycls.value, null, get_notice(t, 'value'));
@@ -714,11 +713,11 @@ test('A038', function (t) {
     'use strict';
     var flag1;
     var flag2;
-    flag1 = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null, false, true);
-    flag2 = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null, false);
+    flag1 = keyparse.KeyParser('prefix', 'help|h!func=args_opt_func;wait=cc!', null, false, true);
+    flag2 = keyparse.KeyParser('prefix', 'help|h!func=args_opt_func;wait=cc!', null, false);
     t.notEqual(flag1.equals(flag2), true, get_notice(t, 'not equals'));
-    flag1 = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null, false, true);
-    flag2 = keyparse.KeyParser('prefix','help|h!func=args_opt_func;wait=cc!',null, false, true);
+    flag1 = keyparse.KeyParser('prefix', 'help|h!func=args_opt_func;wait=cc!', null, false, true);
+    flag2 = keyparse.KeyParser('prefix', 'help|h!func=args_opt_func;wait=cc!', null, false, true);
     t.equal(flag1.equals(flag2), true, get_notice(t, 'equals'));
     t.end();
 });
@@ -726,11 +725,14 @@ test('A038', function (t) {
 test('A039', function (t) {
     'use strict';
     var keycls;
-    keycls = keyparse.KeyParser('rdep','ip',{'modules' : [],'$<NARGS>' : '+'}, false);
+    keycls = keyparse.KeyParser('rdep', 'ip', {
+        modules: [],
+        '$<NARGS>': '+'
+    }, false);
     t.equal(keycls.iscmd, true, get_notice(t, 'iscmd'));
     t.equal(keycls.cmdname, 'ip', get_notice(t, 'cmdname'));
     t.equal(keycls.prefix, 'rdep', get_notice(t, 'prefix'));
-    keycls = keyparse.KeyParser('rdep_ip','modules', [], false);
+    keycls = keyparse.KeyParser('rdep_ip', 'modules', [], false);
     t.equal(keycls.isflag, true, get_notice(t, 'isflag'));
     t.deepEqual(keycls.value, [], get_notice(t, 'value'));
     t.equal(keycls.prefix, 'rdep_ip', get_notice(t, 'prefix'));
@@ -745,11 +747,11 @@ test('A040', function (t) {
     'use strict';
     var flag1;
     var flag2;
-    flag1 = keyparse.KeyParser('prefix','json!func=args_opt_func;wait=cc!', null, false, false, true);
-    flag2 = keyparse.KeyParser('prefix','json!func=args_opt_func;wait=cc!', null, false);
+    flag1 = keyparse.KeyParser('prefix', 'json!func=args_opt_func;wait=cc!', null, false, false, true);
+    flag2 = keyparse.KeyParser('prefix', 'json!func=args_opt_func;wait=cc!', null, false);
     t.notEqual(flag1.equals(flag2), true, get_notice(t, 'not equals'));
-    flag1 = keyparse.KeyParser('prefix','json!func=args_opt_func;wait=cc!', null, false, false, true);
-    flag2 = keyparse.KeyParser('prefix','json!func=args_opt_func;wait=cc!', null, false, false, true);
+    flag1 = keyparse.KeyParser('prefix', 'json!func=args_opt_func;wait=cc!', null, false, false, true);
+    flag2 = keyparse.KeyParser('prefix', 'json!func=args_opt_func;wait=cc!', null, false, false, true);
     t.equal(flag1.equals(flag2), true, get_notice(t, 'equals'));
     t.end();
 });
@@ -757,7 +759,13 @@ test('A040', function (t) {
 test('A041', function (t) {
     'use strict';
     var keycls;
-    keycls = keyparse.KeyParser('prefix','$json',{"nargs":1,"attr":{"func":"args_opt_func","wait": "cc"}}, false);
+    keycls = keyparse.KeyParser('prefix', '$json', {
+        nargs: 1,
+        attr: {
+            func: "args_opt_func",
+            wait: "cc"
+        }
+    }, false);
     t.equal(keycls.prefix, 'prefix', get_notice(t, 'prefix'));
     t.equal(keycls.isflag, true, get_notice(t, 'isflag'));
     t.equal(keycls.attr.func, 'args_opt_func', get_notice(t, 'attr.func'));
@@ -765,7 +773,7 @@ test('A041', function (t) {
     t.equal(keycls.flagname, 'json', get_notice(t, 'flagname'));
     t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
     t.equal(keycls.longopt, '--prefix-json', get_notice(t, 'longopt'));
-    t.equal(keycls.shortopt, null,  get_notice(t, 'shortopt'));
+    t.equal(keycls.shortopt, null, get_notice(t, 'shortopt'));
     t.equal(keycls.optdest, 'prefix_json', get_notice(t, 'optdest'));
     t.equal(keycls.varname, 'prefix_json', get_notice(t, 'varname'));
     t.end();
@@ -774,7 +782,7 @@ test('A041', function (t) {
 test('A042', function (t) {
     'use strict';
     var keycls;
-    keycls = keyparse.KeyParser('','main',{}, false);
+    keycls = keyparse.KeyParser('', 'main', {}, false);
     t.equal(keycls.prefix, 'main', get_notice(t, 'prefix'));
     t.equal(keycls.isflag, false, get_notice(t, 'isflag'));
     t.equal(keycls.iscmd, true, get_notice(t, 'iscmd'));
@@ -788,7 +796,7 @@ test('A042', function (t) {
 test('A043', function (t) {
     'use strict';
     var keycls;
-    keycls = keyparse.KeyParser('','rollback|R## rollback not set ##',true,false,false, false,'++','+');
+    keycls = keyparse.KeyParser('', 'rollback|R## rollback not set ##', true, false, false, false, '++', '+');
     t.equal(keycls.flagname, 'rollback', get_notice(t, 'flagname'));
     t.equal(keycls.shortflag, 'R', get_notice(t, 'shortflag'));
     t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
@@ -809,7 +817,7 @@ test('A043', function (t) {
 test('A044', function (t) {
     'use strict';
     var keycls;
-    keycls = keyparse.KeyParser('','rollback|R## rollback not set ##',true,false,false, false,'++','+');
+    keycls = keyparse.KeyParser('', 'rollback|R## rollback not set ##', true, false, false, false, '++', '+');
     t.equal(keycls.flagname, 'rollback', get_notice(t, 'flagname'));
     t.equal(keycls.shortflag, 'R', get_notice(t, 'shortflag'));
     t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
@@ -831,7 +839,7 @@ test('A044', function (t) {
 test('A045', function (t) {
     'use strict';
     var keycls;
-    keycls = keyparse.KeyParser('','crl_CA_compromise',false,false,false, false,'++','+', true);
+    keycls = keyparse.KeyParser('', 'crl_CA_compromise', false, false, false, false, '++', '+', true);
     t.equal(keycls.flagname, 'crl_CA_compromise', get_notice(t, 'flagname'));
     t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
     t.equal(keycls.prefix, '', get_notice(t, 'prefix'));
@@ -850,3 +858,13 @@ test('A045', function (t) {
     t.end();
 });
 
+test('A046', function (t) {
+    'use strict';
+    var prefix = '';
+    var key = util.format('%s##json input file to get the value set##', 'json');
+    var value = null;
+    var keycls = keyparse.KeyParser(prefix, key, value, false, false, true, '++', '+');
+    t.equal(keycls.flagname, 'json', get_notice(t, 'flagname'));
+    t.equal(keycls.shortflag, null, get_notice(t, 'shortflag'));
+    t.end();
+});

@@ -24,6 +24,14 @@ var set_words_access = function (words, self) {
     return;
 };
 
+var check_valid = function (val) {
+    'use strict';
+    if (val === undefined || val === null) {
+        return false;
+    }
+    return true;
+};
+
 var get_value_type = function (value) {
     'use strict';
     var reg;
@@ -49,16 +57,19 @@ var get_value_type = function (value) {
     return typeof value;
 };
 
-function get_attr_from_string(self,attr) {
-    var sarr ;
-    var barr ;
-    var splitchar=';';
+function get_attr_from_string(self, attr) {
+    'use strict';
+    var sarr;
+    var barr;
+    var splitchar = ';';
     var idx;
     var valid_splitchars = ';.\\/:@+';
-    var errstr ;
+    var errstr;
+    var splitstr = 'split=';
+    var curkv;
 
-    if (attr.startsWith('split=') && attr.length > 'split='.length) {
-        idx = 'split='.length;
+    if (attr.startsWith(splitstr) && attr.length > splitstr.length) {
+        idx = splitstr.length;
         splitchar = attr[idx];
     }
     if (valid_splitchars.indexOf(splitchar) < 0) {
@@ -67,39 +78,54 @@ function get_attr_from_string(self,attr) {
     }
 
     sarr = attr.split(splitchar);
-    for (idx = 0; idx < sarr.length;idx += 1) {
-        var curkv = sarr[idx];
+    for (idx = 0; idx < sarr.length; idx += 1) {
+        curkv = sarr[idx];
         barr = curkv.split('=');
-        if (barr.length < 2 || barr[0] === 'split') {
-            continue;
+        if (barr.length >= 2 && barr[0] !== 'split') {
+            self[barr[0]] = barr[1];
         }
-        self[barr[0]] = barr[1];
     }
 
     return self;
-};
+}
 
 function KeyAttr(attr) {
+    'use strict';
     var self = {};
 
     if (attr !== undefined && attr !== null && typeof attr === 'string') {
-        self = get_attr_from_string(self,attr);
+        self = get_attr_from_string(self, attr);
     } else if (attr !== undefined && attr !== null && typeof attr === 'object') {
         self = attr;
     }
 
+    self.format_string = function () {
+        var keys;
+        var retstr = '';
+        var idx;
+        retstr += '[';
+        keys = Object.keys(self);
+        for (idx = 0; idx < keys.length; idx += 1) {
+            if (keys[idx] !== 'format_string') {
+                retstr += util.format('%s=%s;', keys[idx], self[keys[idx]]);
+            }
+        }
+        retstr += ']';
+        return retstr;
+    };
+
     return self;
-};
+}
 
 
-function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, shortprefix ,nochange) {
+function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile, longprefix, shortprefix, nochange) {
     'use strict';
     var dict;
     var self;
     var flagspecial = ['value', 'prefix'];
     var flagwords = ['flagname', 'helpinfo', 'shortflag', 'nargs', 'varname'];
     var cmdwords = ['cmdname', 'function', 'helpinfo'];
-    var otherwords = ['origkey', 'iscmd', 'isflag', 'typename','attr','longprefix','shortprefix'];
+    var otherwords = ['origkey', 'iscmd', 'isflag', 'typename', 'attr', 'longprefix', 'shortprefix'];
     var formwords = ['longopt', 'shortopt', 'optdest'];
     dict = {};
     self = {};
@@ -135,7 +161,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
     self.funcexpr = new RegExp('<([^\\<\\>\\#\\$\\| \t\!]+)>', 'i');
     self.flagexpr = new RegExp('^([^\\<\\>\\#\\+\\$ \t\!]+)', 'i');
     self.mustflagexpr = new RegExp('^\\$([^\\$\\+\\#\\<\\>\!]+)', 'i');
-    self.attrexpr = new RegExp('\!([^\<\>\$!\#\|\!]+)\!','i');
+    self.attrexpr = new RegExp('\!([^\<\>\$!\#\|\!]+)\!', 'i');
     dict.longprefix = longprefix;
     dict.shortprefix = shortprefix;
     dict.nochange = nochange;
@@ -157,11 +183,13 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                 retstr += util.format('%s_', dict.prefix);
             }
             retstr += dict.flagname;
-            if (! dict.nochange) {
+            if (!dict.nochange) {
                 retstr = retstr.toLowerCase();
-                retstr = retstr.replace(/_/g, '-');                
+                retstr = retstr.replace(/_/g, '-');
             }
-            return retstr;
+            if (true) {
+                return retstr;
+            }
         } else if (elm === 'shortopt') {
             if (!dict.isflag || !dict.flagname || dict.typename === 'args') {
                 errstr = util.format('can not set (%s) shortopt', dict.origkey);
@@ -172,7 +200,9 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
             }
             retstr += dict.shortprefix;
             retstr += dict.shortflag;
-            return retstr;
+            if (true) {
+                return retstr;
+            }
         } else if (elm === 'optdest') {
             if (!dict.isflag || !dict.flagname || dict.typename === 'args') {
                 errstr = util.format('can not set (%s) shortopt', dict.origkey);
@@ -183,18 +213,19 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
             }
 
             retstr += dict.flagname;
-            if (! dict.nochange){
-                retstr = retstr.toLowerCase();    
-            }            
+            if (!dict.nochange) {
+                retstr = retstr.toLowerCase();
+            }
             retstr = retstr.replace(/-/g, '_');
-            return retstr;
+            if (true) {
+                return retstr;
+            }
         } else if (elm === 'needarg') {
             if (!dict.isflag) {
                 return 0;
             }
 
-            if (dict.typename === 'int' || dict.typename === 'object' || dict.typename === 'jsonfile' 
-                 || dict.typename === 'float' || dict.typename === 'string' || dict.typename === 'array') {
+            if (dict.typename === 'int' || dict.typename === 'object' || dict.typename === 'jsonfile' || dict.typename === 'float' || dict.typename === 'string' || dict.typename === 'array') {
                 return 1;
             }
             return 0;
@@ -205,16 +236,12 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
 
     self.equal_name = function (other, name) {
         var odict;
-        if (flagspecial.indexOf(name) >= 0 ||
-            flagwords.indexOf(name) >= 0 ||
-            cmdwords.indexOf(name) >= 0 ||
-            otherwords.indexOf(name) >= 0 ||
-            formwords.indexOf(name) >= 0) {
-            odict = other.__innerdict;
+        if (flagspecial.indexOf(name) >= 0 || flagwords.indexOf(name) >= 0 || cmdwords.indexOf(name) >= 0 || otherwords.indexOf(name) >= 0 || formwords.indexOf(name) >= 0) {
+            odict = other.inner_innerdict;
             if (dict[name] === odict[name]) {
                 return true;
             }
-            if (dict[name] === undefined && odict[name] === undefined ) {
+            if (dict[name] === undefined && odict[name] === undefined) {
                 return true;
             }
             if (dict[name] === null && odict[name] === null) {
@@ -225,26 +252,26 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
     };
 
     self.equals = function (other) {
-        if (! self.equal_name(other, 'origkey')) {
+        if (!self.equal_name(other, 'origkey')) {
             return false;
         }
-        if (! self.equal_name(other, 'prefix')) {
-            return false;
-        }
-
-        if (! self.equal_name(other, 'typename')) {
+        if (!self.equal_name(other, 'prefix')) {
             return false;
         }
 
-        if (! self.equal_name(other, 'value')) {
+        if (!self.equal_name(other, 'typename')) {
             return false;
         }
 
-        if (! self.equal_name(other, 'longopt')) {
+        if (!self.equal_name(other, 'value')) {
             return false;
         }
 
-        if (! self.equal_name(other, 'shortopt')) {
+        if (!self.equal_name(other, 'longopt')) {
+            return false;
+        }
+
+        if (!self.equal_name(other, 'shortopt')) {
             return false;
         }
         return true;
@@ -304,8 +331,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                 errstr = util.format('(%s) flag typename object', dict.origkey);
                 throw new Error(errstr);
             }
-            if (dict.typename !== get_value_type(dict.value) && dict.typename !== 'count' && dict.typename !== 'args' 
-                && dict.typename !== 'help' && dict.typename !== 'jsonfile') {
+            if (dict.typename !== get_value_type(dict.value) && dict.typename !== 'count' && dict.typename !== 'args' && dict.typename !== 'help' && dict.typename !== 'jsonfile') {
                 errstr = util.format('(%s) (%s)not match typename(%s)', dict.origkey, dict.typename, get_value_type(dict.value));
                 throw new Error(errstr);
             }
@@ -395,7 +421,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                 throw new Error(errstr);
             }
 
-            if ( dict.prefix.length === 0) {
+            if (dict.prefix.length === 0) {
                 dict.prefix += dict.cmdname;
             }
 
@@ -468,12 +494,12 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
                     dict.value = value.value;
                     dict.typename = get_value_type(value.value);
                 }
-            }  else if (k === 'attr') {
-                dict.attr = KeyAttr(value[k]);
+            } else if (k === 'attr') {
+                dict.attr = new KeyAttr(value[k]);
             }
         }
 
-        if (( dict.prefix === null || dict.prefix.length === 0) && prefix.length > 0) {
+        if ((dict.prefix === null || dict.prefix.length === 0) && prefix.length > 0) {
             dict.prefix = prefix;
         }
     };
@@ -623,8 +649,8 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
 
 
         dict.value = value;
-        if (! ishelp && ! isjsonfile) {
-            dict.typename = get_value_type(value);    
+        if (!ishelp && !isjsonfile) {
+            dict.typename = get_value_type(value);
         } else if (ishelp) {
             dict.typename = 'help';
             dict.nargs = 0;
@@ -637,7 +663,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
             errstr = util.format('help type must be value null');
             throw new Error(errstr);
         }
-        
+
         if (cmdmod && dict.typename !== 'object') {
             /*flag mod is true we give the flag*/
             flagmod = true;
@@ -675,7 +701,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
 
         m = self.attrexpr.exec(dict.origkey);
         if (m !== undefined && m !== null && m.length > 1) {
-            dict.attr = KeyAttr(m[1]);
+            dict.attr = new KeyAttr(m[1]);
         }
 
         m = self.funcexpr.exec(dict.origkey);
@@ -694,7 +720,55 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile , longprefix, 
         return self.reset_value().parse();
     };
 
-    self.__innerdict = dict;
+    self.format_string = function () {
+        var retstr = '';
+        retstr += '{';
+        retstr += util.format('<type:%s>', self.typename);
+        retstr += util.format('<origkey:%s>', dict.origkey);
+        if (self.iscmd) {
+            retstr += util.format('<cmdname:%s>', self.cmdname);
+            if (self.function !== undefined && self.function !== null) {
+                retstr += util.format('<function:%s>', self.function);
+            }
+            if (self.helpinfo !== undefined && self.helpinfo !== null) {
+                retstr += util.format('<helpinfo:%s>', self.helpinfo);
+            }
+            if (self.prefix.length > 0) {
+                retstr += util.format('<prefix:%s>', self.prefix);
+            }
+        }
+
+        if (self.isflag) {
+            if (check_valid(self.flagname)) {
+                retstr += util.format('<flagname:%s>', self.flagname);
+            }
+            if (check_valid(self.shortflag)) {
+                retstr += util.format('<shortflag:%s>', self.shortflag);
+            }
+            if (self.prefix.length > 0) {
+                retstr += util.format('<prefix:%s>', self.prefix);
+            }
+
+            if (check_valid(self.nargs)) {
+                retstr += util.format('<nargs:%s>', self.nargs);
+            }
+
+            if (check_valid(self.varname)) {
+                retstr += util.format('<varname:%s>', self.varname);
+            }
+
+            retstr += util.format('<value:%s>', self.value);
+            retstr += util.format('<longprefix:%s>', self.longprefix);
+            retstr += util.format('<shortprefix:%s>', self.shortprefix);
+            if (self.attr !== undefined && self.attr !== null) {
+                retstr += util.format('<attr:%s>', self.attr.format_string());
+            }
+        }
+        retstr += '}';
+        return retstr;
+    };
+
+    self.inner_innerdict = dict;
 
     return self.init_fn();
 }
