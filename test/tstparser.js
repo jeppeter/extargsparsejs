@@ -548,3 +548,54 @@ test('A021', function (t) {
     t.deepEqual(objset.dep_list, [], get_notice(t, 'objset dep_list'));
     t.end();
 });
+
+var assert_get_opt = function (opts, optname) {
+    'use strict';
+    var idx;
+    var c;
+    for (idx = 0; idx < opts.length; idx += 1) {
+        c = opts[idx];
+        if (c.isflag) {
+            if (optname === '$' && c.flagname === '$') {
+                return c;
+            }
+            if (c.flagname !== '$') {
+                if (c.optdest === optname) {
+                    return c;
+                }
+            }
+        }
+    }
+    return null;
+};
+
+
+test('A022', function (t) {
+    'use strict';
+    var commandline = `{ "verbose|v" : "+" }`;
+    var parser;
+    var opts;
+    var flag;
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    t.deepEqual(parser.get_subcommands(), [], get_notice(t, 'subcommands'));
+    t.equal(parser.get_subcommands('nocommand'), null, get_notice(t, 'nocommand'));
+    opts = parser.get_cmdopts();
+    t.equal(opts.length, 4, get_notice(t, 'opts length'));
+    flag = assert_get_opt(opts, '$');
+    t.equal(flag.flagname, '$', get_notice(t, 'get $'));
+    flag = assert_get_opt(opts, 'verbose');
+    t.equal(flag.flagname, 'verbose', get_notice(t, 'get verbose'));
+    t.equal(flag.longopt, '--verbose', get_notice(t, 'get --verbose'));
+    t.equal(flag.shortopt, '-v', get_notice(t, 'get -v'));
+    flag = assert_get_opt(opts, 'noflag');
+    t.equal(flag, null, get_notice(t, 'get noflag'));
+    flag = assert_get_opt(opts, 'json');
+    t.equal(flag.value, null, get_notice(t, 'flag json'));
+    flag = assert_get_opt(opts, 'help');
+    t.ok(flag !== null, get_notice(t, 'help not none'));
+    t.equal(flag.longopt, '--help', get_notice(t, 'longopt --help'));
+    t.equal(flag.shortopt, '-h', get_notice(t, 'shortopt -h'));
+    t.equal(flag.typename, 'help', get_notice(t, 'help typename help'));
+    t.end();
+});

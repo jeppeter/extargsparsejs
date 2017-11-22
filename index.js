@@ -107,7 +107,7 @@ function LoggerObject(cmdname) {
         if (Array.isArray(arr)) {
             var idx = 0;
             arr.forEach(function (elm) {
-                rets += util.format('[%d]%s\n', idx, self.format_string(elm));
+                rets += util.format('[%d]%s\n', idx, elm);
                 idx += 1;
             });
         } else if (typeof arr === 'object') {
@@ -2565,7 +2565,11 @@ function ExtArgsParse(option) {
                 return innerself.inner_get_subcommands(copysarr.join('.'), cmdpaths);
             }
         });
-        return retnames.sort();
+
+        if (not_null(retnames)) {
+            return retnames.sort();
+        }
+        return retnames;
     };
 
     innerself.inner_get_cmdkey = function (cmdname, cmdpaths) {
@@ -2613,13 +2617,16 @@ function ExtArgsParse(option) {
     };
 
     innerself.inner_sort_cmdopts = function (retopts) {
+        var normalopts = null;
         if (not_null(retopts)) {
-            var normalopts = [];
             var argsopt = null;
             var idx;
             var jdx;
             var tmpopt;
+            normalopts = [];
+            self.info(util.format('retopts [%d]', retopts.length));
             retopts.forEach(function (curopt) {
+                self.info(util.format('%s', curopt.format_string()));
                 if (curopt.typename !== 'args') {
                     normalopts.push(curopt);
                 } else {
@@ -2642,11 +2649,10 @@ function ExtArgsParse(option) {
             }
 
             if (not_null(argsopt)) {
-                retopts.push(argsopt);
+                normalopts.push(argsopt);
             }
-            retopts = retopts.concat(normalopts);
         }
-        return retopts;
+        return normalopts;
     };
 
     innerself.inner_get_cmdopts = function (cmdname, cmdpaths) {
