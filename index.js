@@ -36,17 +36,17 @@ var set_property_value = function (self, name, value) {
     return added;
 };
 
-var set_property_max = function (dictobj, name) {
+var set_property_max = function (dictobj, newobj, name) {
     'use strict';
-    dictobj[name] = 0;
+    newobj[name] = 0;
     Object.defineProperty(dictobj, name, {
         enumerable: true,
         get: function () {
-            return dictobj[name];
+            return newobj[name];
         },
         set: function (v) {
-            if (dictobj[name] < v) {
-                dictobj[name] = v;
+            if (newobj[name] < v) {
+                newobj[name] = v;
             }
         }
     });
@@ -298,11 +298,11 @@ function HelpSize() {
     };
 
     innerself.inner_init_fn = function () {
-        set_property_max(self, 'optnamesize');
-        set_property_max(self, 'optexprsize');
-        set_property_max(self, 'opthelpsize');
-        set_property_max(self, 'cmdnamesize');
-        set_property_max(self, 'cmdhelpsize');
+        set_property_max(self, innerself, 'optnamesize');
+        set_property_max(self, innerself, 'optexprsize');
+        set_property_max(self, innerself, 'opthelpsize');
+        set_property_max(self, innerself, 'cmdnamesize');
+        set_property_max(self, innerself, 'cmdhelpsize');
         return self;
     };
 
@@ -2730,4 +2730,5 @@ var set_attr_self = function (self, args, prefix) {
 };
 
 module.exports.ExtArgsParse = ExtArgsParse;
+module.exports.ExtArgsOption = ExtArgsOption;
 module.exports.set_attr_self = set_attr_self;

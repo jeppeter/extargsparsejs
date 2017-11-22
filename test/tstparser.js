@@ -751,3 +751,108 @@ test('A025', function (t) {
         });
     });
 });
+
+
+function StringIO() {
+    'use strict';
+    var self = {};
+    var innerself = {};
+
+    innerself.init_fn = function () {
+        innerself.inner_buffer = '';
+        return self;
+    };
+
+    self.write = function (input, callback) {
+        innerself.inner_buffer += input;
+        if (callback !== undefined && callback !== null) {
+            callback(null);
+        }
+        return;
+    };
+    self.getvalue = function () {
+        return innerself.inner_buffer;
+    };
+
+    return innerself.init_fn();
+}
+
+var split_strings = function (inputstr) {
+    'use strict';
+    var retsarr = [];
+    var sarr;
+    var idx;
+    if (typeof inputstr === 'string' && inputstr.length > 0) {
+        sarr = inputstr.split('\n');
+        for (idx = 0; idx < sarr.length; idx += 1) {
+            retsarr.push(sarr[idx].replace(/[\r\n]+$/, ''));
+        }
+    }
+    return retsarr;
+};
+
+var assert_string_expr = function (lines, exprstr) {
+    'use strict';
+    var idx;
+    var reg = new RegExp(exprstr);
+
+    for (idx = 0; idx < lines.length; idx += 1) {
+        if (reg.test(lines[idx])) {
+            return true;
+        }
+    }
+    return false;
+};
+
+var get_opt_split_string = function (lines, opt) {
+    'use strict';
+    var exprstr;
+    if (opt.typename === 'args') {
+        return true;
+    }
+    exprstr = util.format('^\\s+%s', opt.longopt);
+    if (opt.shortopt !== null) {
+        exprstr += util.format('|%s', opt.shortopt);
+    }
+    exprstr += '\\s+';
+    if (opt.nargs !== 0) {
+        exprstr += util.format('%s', opt.optdest);
+    }
+    exprstr += '.*';
+    return assert_string_expr(lines, exprstr);
+};
+
+test('A026', function (t) {
+    'use trict';
+    var commandline = `        {            "verbose|v" : "+",            "+http" : {                "url|u" : "http://www.google.com",                "visual_mode|V": false            },            "$port|p" : {                "value" : 3000,                "type" : "int",                "nargs" : 1 ,                 "helpinfo" : "port to connect"            },            "dep" : {                "list|l" : [],                "string|s" : "s_var",                "$" : "+",                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            },            "rdep" : {                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            }        }`;
+    var options = extargsparse.ExtArgsOption();
+    var parser;
+    var sio;
+    var sarr;
+    var opts;
+    var idx;
+    var curopt;
+    setup_before(t);
+    options.prog = 'cmd1';
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    sio = new StringIO();
+    parser.print_help(sio);
+    sarr = split_strings(sio.getvalue());
+    opts = parser.get_cmdopts();
+    for (idx = 0; idx < opts.length; idx += 1) {
+        curopt = opts[idx];
+        t.ok(get_opt_split_string(sarr, curopt), get_notice(t, util.format('search [%s]', curopt.flagname)));
+    }
+
+    sio = new StringIO();
+    parser.print_help(sio, 'rdep');
+    sarr = split_strings(sio.getvalue());
+    process.stdout.write(sio.getvalue());
+    opts = parser.get_cmdopts('rdep');
+    for (idx = 0; idx < opts.length; idx += 1) {
+        curopt = opts[idx];
+        t.ok(get_opt_split_string(sarr, curopt), get_notice(t, util.format('search rdep[%s]', curopt.flagname)));
+    }
+    t.end();
+});
