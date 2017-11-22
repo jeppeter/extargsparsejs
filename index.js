@@ -1481,7 +1481,7 @@ function ExtArgsParse(option) {
         innerself.load_priority = [exports.SUB_COMMAND_JSON_SET, exports.COMMAND_JSON_SET, exports.ENVIRONMENT_SET, exports.ENV_SUB_COMMAND_JSON_SET, exports.ENV_COMMAND_JSON_SET];
         if (not_null(opt.priority)) {
             opt.priority.forEach(function (elm, idx) {
-                if (innerself.priority.indexOf(elm) < 0) {
+                if (innerself.load_priority.indexOf(elm) < 0) {
                     throw new Error(util.format('[%d]elm (%s) not valid', idx, elm));
                 }
             });
