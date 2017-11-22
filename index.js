@@ -107,7 +107,7 @@ function LoggerObject(cmdname) {
         if (Array.isArray(arr)) {
             var idx = 0;
             arr.forEach(function (elm) {
-                rets += util.format('[%d]%s\n', idx, elm);
+                rets += util.format('[%d]%s\n', idx, self.format_string(elm));
                 idx += 1;
             });
         } else if (typeof arr === 'object') {
@@ -1602,9 +1602,11 @@ function ExtArgsParse(option) {
         if (not_null(innerself.maincmd)) {
             commands.push(innerself.maincmd);
         }
-        idx = 0;
+        idx = 1;
+        self.info(util.format('idx [%d] sarr [%s][%s]', idx, sarr.length, sarr));
         while (idx <= sarr.length && not_null(cmdname) && cmdname.length > 0) {
             if (idx !== 0) {
+                self.info(util.format('find [%d] [%s]', idx - 1, sarr[(idx - 1)]));
                 curcommand = innerself.inner_find_command_inner(sarr[(idx - 1)], commands);
                 if (!not_null(curcommand)) {
                     break;
@@ -1620,10 +1622,11 @@ function ExtArgsParse(option) {
         var sarr;
         var curroot;
         var nextparsers = [];
-        var copyparser;
         var copysarr;
         var idx;
         var copylen;
+        var curcmd;
+        var jdx;
 
         if (!not_null(curparser)) {
             curparser = null;
@@ -1632,17 +1635,16 @@ function ExtArgsParse(option) {
         curroot = innerself.maincmd;
         if (not_null(curparser)) {
             nextparsers = curparser;
-            copyparser = [];
-            for (idx = 0; idx < curparser.length; idx += 1) {
-                copyparser.push(curparser[idx]);
-            }
-            copylen = copyparser.length;
-            curroot = copyparser[(copylen - 1)];
+            copylen = nextparsers.length;
+            curroot = nextparsers[(copylen - 1)];
+            self.info(' ');
         }
+        self.info(util.format('curroot [%s]', curroot));
 
         if (sarr.length > 1) {
             nextparsers.push(curroot);
-            curroot.subcommands.forEach(function (curcmd) {
+            for (jdx = 0; jdx < curroot.subcommands.length; jdx += 1) {
+                curcmd = curroot.subcommands[jdx];
                 if (curcmd.cmdname === sarr[0]) {
                     nextparsers = [];
                     if (not_null(curparser)) {
@@ -1655,13 +1657,14 @@ function ExtArgsParse(option) {
                     }
                     return innerself.inner_find_command_inner(copysarr.join('.'), nextparsers);
                 }
-            });
+            }
         } else {
-            curroot.subcommands.forEach(function (curcmd) {
+            for (idx = 0; idx < curroot.subcommands.length; idx += 1) {
+                curcmd = curroot.subcommands[idx];
                 if (sarr.length > 0 && curcmd.cmdname === sarr[0]) {
                     return curcmd;
                 }
-            });
+            }
         }
         return null;
     };
@@ -1749,7 +1752,7 @@ function ExtArgsParse(option) {
         }
 
         nextparsers.push(parser_in);
-        self.info(util.format('nextparser %s', self.format_string(nextparsers)));
+        //self.info(util.format('nextparser %s', self.format_string(nextparsers)));
         self.info(util.format('keycls %s', keycls.format_string()));
         if (innerself.cmdprefixadded) {
             newprefix = prefix;
@@ -1815,7 +1818,7 @@ function ExtArgsParse(option) {
                 self.error_msg(util.format('can not add (%s, %s)', k, v));
             }
         }
-        self.info(util.format('%s', self.format_string(parentpath)));
+        //self.info(util.format('%s', self.format_string(parentpath)));
         return;
     };
 
@@ -2308,7 +2311,7 @@ function ExtArgsParse(option) {
         var idx;
         var ccmdpathslen = cmdpaths.length;
         cmdname = innerself.inner_format_cmdname_path(cmdpaths);
-        self.info(util.format('[%s] %s', cmdname, self.format_string(cmdpaths[(ccmdpathslen - 1)].cmdopts)));
+        //self.info(util.format('[%s] %s', cmdname, self.format_string(cmdpaths[(ccmdpathslen - 1)].cmdopts)));
         lastcmd = cmdpaths[(ccmdpathslen - 1)];
         for (idx = 0; idx < lastcmd.cmdopts.length; idx += 1) {
             curopt = lastcmd.cmdopts[idx];
@@ -2485,16 +2488,24 @@ function ExtArgsParse(option) {
             });
 
             args = innerself.inner_set_default_value(args);
+            self.info(util.format('args [%s]', util.inspect(args, {
+                showHidden: true,
+                depth: null
+            })));
             if (not_null(args.subcommand)) {
+                self.info(util.format('subcommand [%s]', args.subcommand));
                 cmds = innerself.inner_find_commands_in_path(args.subcommand);
                 kdx = cmds.length;
+                self.info(util.format('[%d]keycls [%s]', (kdx - 1), cmds[(kdx - 1)].keycls.format_string()));
                 funcname = cmds[(kdx - 1)].keycls.function;
                 if (innerself.output_mode.length > 0) {
                     idx = (innerself.output_mode.length - 1);
                     getmode = innerself.output_mode[idx];
                 }
+                self.info(util.format('getmode [%s] funcname [%s]', getmode, funcname));
                 if (not_null(funcname) && !not_null(getmode)) {
-                    self.call_func(funcname, null, args, Context);
+                    self.info(util.format('funcname [%s]', funcname));
+                    self.call_func(funcname, Context, args);
                     return args;
                 }
             }
