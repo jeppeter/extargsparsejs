@@ -724,18 +724,19 @@ function ParseState(args, maincmd, optattr) {
 
     innerself.inner_find_sub_command = function (name) {
         var cmdpathslen = innerself.cmdpaths.length;
+        var findkeycls = null;
         if (cmdpathslen > 0) {
             self.info(util.format('cmdpathslen [%d] [%s] search for [%s]', cmdpathslen, innerself.cmdpaths[(cmdpathslen - 1)].cmdname, name));
             innerself.cmdpaths[(cmdpathslen - 1)].subcommands.forEach(function (curcmd, jdx) {
                 self.info(util.format('[%d]cmd[%s]', jdx, curcmd.cmdname));
                 if (curcmd.cmdname === name) {
                     innerself.cmdpaths.push(curcmd);
-                    self.info(util.format(' keycls [%s]', curcmd.keycls));
-                    return curcmd.keycls;
+                    self.info(util.format(' keycls [%s]', curcmd.keycls.format_string()));
+                    findkeycls = curcmd.keycls;
                 }
             });
         }
-        return null;
+        return findkeycls;
     };
 
 
@@ -985,6 +986,7 @@ function ParseState(args, maincmd, optattr) {
             return keycls;
         }
 
+        self.info(util.format('keycls [null] for [%s]', innerself.args[oldidx]));
         if (not_null(innerself.parseall) && innerself.parseall) {
             self.info(util.format('push [%s]', innerself.args[oldidx]));
             innerself.leftargs.push(innerself.args[oldidx]);
@@ -2362,7 +2364,9 @@ function ExtArgsParse(option) {
 
     innerself.inner_call_opt_method = function (args, validx, keycls, params) {
         var nargs;
-        accessed[keycls.optdest] = true;
+        if (keycls.isflag && keycls.typename !== 'help' && keycls.flagname !== '$') {
+            accessed[keycls.optdest] = true;
+        }
         if (not_null(keycls.attr) && not_null(keycls.attr.optparse)) {
             nargs = self.call_func(keycls.attr.optparse, null, args, validx, keycls, params);
         } else {
