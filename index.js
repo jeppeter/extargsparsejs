@@ -576,7 +576,6 @@ function ParserCompat(keycls, opt) {
                     }
                 }
             }
-            self.info(util.format('retstr [%s]', retstr));
             retstr += '\n';
         }
 
@@ -588,13 +587,11 @@ function ParserCompat(keycls, opt) {
             retstr += '[OPTIONS]\n';
             for (idx = 0; idx < self.cmdopts.length; idx += 1) {
                 curopt = self.cmdopts[idx];
-                self.info(util.format('retstr [%s]', retstr));
                 if (curopt.typename !== 'args') {
                     optname = innerself.inner_get_opt_optname(curopt);
                     optexpr = innerself.inner_get_opt_expr(curopt);
                     opthelp = innerself.inner_get_opt_helpinfo(curopt);
 
-                    self.info(util.format('optname[%s] optexpr[%s] opthelp[%s]', optname, optexpr, opthelp));
                     curstr = '';
                     curstr += util.format('    ');
                     curstr += util.format('%s %s %s\n', format_length(util.format('%s', optname), helpsize.optnamesize), format_length(optexpr, helpsize.optexprsize), format_length(opthelp, helpsize.opthelpsize));
@@ -1873,7 +1870,6 @@ function ExtArgsParse(option) {
         var idx;
         curcmd = innerself.maincmd;
         if (not_null(cmdparser)) {
-            self.info(util.format('cmdparser %s', self.format_string(cmdparser)));
             curcmd = cmdparser[(cmdparser.length - 1)];
             idx = 0;
             while (idx < (cmdparser.length - 1)) {
@@ -1894,7 +1890,7 @@ function ExtArgsParse(option) {
         var s;
         var paths;
         paths = innerself.inner_find_commands_in_path(cmdname);
-        self.info(util.format('paths [%s]', self.format_string(paths)));
+
         s = innerself.inner_print_help(paths);
         if (not_null(innerself.output_mode) && innerself.output_mode.length > 0 && innerself.output_mode[(innerself.output_mode.length - 1)] === 'bash') {
             var outs;
@@ -2189,7 +2185,7 @@ function ExtArgsParse(option) {
         if (!not_null(paths)) {
             paths = null;
         }
-        self.info(util.format('paths [%s]', innerself.inner_format_cmd_from_cmd_array(paths)));
+
         if (not_null(paths)) {
             parentpath = paths;
         }
