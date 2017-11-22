@@ -514,6 +514,8 @@ function ParserCompat(keycls, opt) {
         var cmdname;
         var cmdhelp;
         var curstr;
+        var idx;
+        var curopt;
         if (!not_null(helpsize)) {
             helpsize = null;
         }
@@ -554,7 +556,8 @@ function ParserCompat(keycls, opt) {
                 retstr += util.format(' [SUBCOMMANDS]');
             }
 
-            self.cmdopts.forEach(function (curopt) {
+            for (idx = 0; idx < self.cmdopts.length; idx += 1) {
+                curopt = self.cmdopts[idx];
                 if (curopt.flagname === '$') {
                     if (curopt.nargs === '+') {
                         retstr += util.format(' args...');
@@ -572,7 +575,8 @@ function ParserCompat(keycls, opt) {
                         }
                     }
                 }
-            });
+            }
+            self.info(util.format('retstr [%s]', retstr));
             retstr += '\n';
         }
 
@@ -582,13 +586,18 @@ function ParserCompat(keycls, opt) {
 
         if (self.cmdopts.length > 0) {
             retstr += '[OPTIONS]\n';
-            self.cmdopts.forEach(function (curopt) {
+            for (idx = 0; idx < self.cmdopts.length; idx += 1) {
+                curopt = self.cmdopts[idx];
+                self.info(util.format('retstr [%s]', retstr));
                 if (curopt.typename !== 'args') {
                     optname = innerself.inner_get_opt_optname(curopt);
                     optexpr = innerself.inner_get_opt_expr(curopt);
                     opthelp = innerself.inner_get_opt_helpinfo(curopt);
+
+                    self.info(util.format('optname[%s] optexpr[%s] opthelp[%s]', optname, optexpr, opthelp));
+                    curstr = '';
                     curstr += util.format('    ');
-                    curstr += util.format('%s %s %s\n', format_length(optname, helpsize.optnamesize), format_length(optexpr, helpsize.optexprsize), format_length(opthelp, helpsize.opthelpsize));
+                    curstr += util.format('%s %s %s\n', format_length(util.format('%s', optname), helpsize.optnamesize), format_length(optexpr, helpsize.optexprsize), format_length(opthelp, helpsize.opthelpsize));
                     if (curstr.length < self.screenwidth) {
                         retstr += curstr;
                     } else {
@@ -603,7 +612,7 @@ function ParserCompat(keycls, opt) {
                         }
                     }
                 }
-            });
+            }
         }
 
         if (self.subcommands.length > 0) {
@@ -1885,6 +1894,7 @@ function ExtArgsParse(option) {
         var s;
         var paths;
         paths = innerself.inner_find_commands_in_path(cmdname);
+        self.info(util.format('paths [%s]', self.format_string(paths)));
         s = innerself.inner_print_help(paths);
         if (not_null(innerself.output_mode) && innerself.output_mode.length > 0 && innerself.output_mode[(innerself.output_mode.length - 1)] === 'bash') {
             var outs;

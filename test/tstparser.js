@@ -848,11 +848,19 @@ test('A026', function (t) {
     sio = new StringIO();
     parser.print_help(sio, 'rdep');
     sarr = split_strings(sio.getvalue());
-    process.stdout.write(sio.getvalue());
     opts = parser.get_cmdopts('rdep');
     for (idx = 0; idx < opts.length; idx += 1) {
         curopt = opts[idx];
         t.ok(get_opt_split_string(sarr, curopt), get_notice(t, util.format('search rdep[%s]', curopt.flagname)));
+    }
+
+    sio = new StringIO();
+    parser.print_help(sio, 'rdep.ip');
+    sarr = split_strings(sio.getvalue());
+    opts = parser.get_cmdopts('rdep.ip');
+    for (idx = 0; idx < opts.length; idx += 1) {
+        curopt = opts[idx];
+        t.ok(get_opt_split_string(sarr, curopt), get_notice(t, util.format('search rdep.ip[%s]', curopt.flagname)));
     }
     t.end();
 });
