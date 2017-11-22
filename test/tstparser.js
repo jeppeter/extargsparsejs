@@ -674,3 +674,80 @@ test('A024', function (t) {
     t.deepEqual(args.subnargs, [], get_notice(t, 'subnargs'));
     t.end();
 });
+
+var write_file_callback = function (filetemplate, filecon, t, notice, callback) {
+    'use strict';
+    mktemp.createFile(filetemplate, function (err, filename) {
+        t.equal(err, null, get_notice(t, util.format('create %s [%s]', notice, filename)));
+        fs.writeFile(filename, filecon, function (err2) {
+            t.equal(err2, null, get_notice(t, util.format('write %s [%s]', notice, filename)));
+            callback(filename);
+        });
+    });
+};
+
+var unlink_file_callback = function (filename, notice, t, callback) {
+    'use strict';
+    fs.unlink(filename, function (err) {
+        t.equal(err, null, get_notice(t, util.format('remove %s [%s]', notice, filename)));
+        callback();
+    });
+};
+
+var environ_key_set = function (keyname) {
+    'use strict';
+    if (process.env[keyname] === undefined || process.env[keyname] === null) {
+        return false;
+    }
+    return true;
+};
+
+test('A025', function (t) {
+    'use strict';
+    var commandline = `{"verbose|v" : "+","+http" : {"url|u" : "http://www.google.com","visual_mode|V": false},"$port|p" : {"value" : 3000,"type" : "int","nargs" : 1 , "helpinfo" : "port to connect"},"dep" : {"list|l" : [],"string|s" : "s_var","$" : "+","ip" : {"verbose" : "+","list" : [],"cc" : []}},"rdep" : {"ip" : {"verbose" : "+","list" : [],"cc" : []}}}`;
+    var depstrval = 'newval';
+    var depliststr = '["depenv1","depenv2"]';
+    var httpvmstr = "true";
+    setup_before(t);
+    write_file_callback('parseXXXXXX.jsonfile', '{ "http" : { "url" : "http://www.github.com"} ,"dep":{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"},"port":6000,"verbose":3}\n', t, 'jsonfile', function (jsonfile) {
+        write_file_callback('parseXXXXXX.jsonfile', '{"list":["depjson1","depjson2"]}\n', t, 'depjsonfile', function (depjsonfile) {
+            write_file_callback('parseXXXXXX.jsonfile', '{"ip": {"list":["rdepjson1","rdepjson3"],"verbose": 5}}\n', t, 'rdepjsonfile', function (rdepjsonfile) {
+                var parser;
+                var args;
+                renew_variable('EXTARGSPARSE_JSON', jsonfile);
+                renew_variable('DEP_JSON', depjsonfile);
+                renew_variable('RDEP_JSON', rdepjsonfile);
+                parser = extargsparse.ExtArgsParse();
+                t.notOk(environ_key_set('DEP_STRING'), get_notice(t, 'not set DEP_STRING'));
+                t.notOk(environ_key_set('DEP_LIST'), get_notice(t, 'not set DEP_LIST'));
+                t.notOk(environ_key_set('HTTP_VISUAL_MODE'), get_notice(t, 'not set HTTP_VISUAL_MODE'));
+                parser.load_command_line_string(commandline);
+                args = parser.parse_command_line(['-p', '9000', 'rdep', 'ip', '--rdep-ip-verbose', '--rdep-ip-cc', 'ee', 'ww']);
+                renew_variable('DEP_STRING', depstrval);
+                renew_variable('DEP_LIST', depliststr);
+                renew_variable('HTTP_VISUAL_MODE', httpvmstr);
+                t.ok(environ_key_set('DEP_STRING'), get_notice(t, ' set DEP_STRING'));
+                t.ok(environ_key_set('DEP_LIST'), get_notice(t, 'set DEP_LIST'));
+                t.ok(environ_key_set('HTTP_VISUAL_MODE'), get_notice(t, 'set HTTP_VISUAL_MODE'));
+                t.equal(args.verbose, 3, get_notice(t, 'verbose 3'));
+                t.equal(args.port, 9000, get_notice(t, 'port 9000'));
+                t.equal(args.dep_string, 'jsonstring', get_notice(t, 'dep_string jsonstring'));
+                t.deepEqual(args.dep_list, ['jsonval1', 'jsonval2'], get_notice(t, 'dep_list [\'jsonval1\', \'jsonval2\']'));
+                t.equal(args.http_visual_mode, false, get_notice(t, 'http_visual_mode false'));
+                t.equal(args.http_url, 'http://www.github.com', get_notice(t, 'http_url http://www.github.com'));
+                t.deepEqual(args.subnargs, ['ww'], get_notice(t, 'subnargs [\'ww\']'));
+                t.equal(args.subcommand, 'rdep.ip', get_notice(t, 'subcommand rdep.ip'));
+                t.equal(args.rdep_ip_verbose, 1, get_notice(t, 'rdep_ip_verbose 1'));
+                t.deepEqual(args.rdep_ip_cc, ['ee'], get_notice(t, 'rdep_ip_cc [\'ee\']'));
+                t.deepEqual(args.rdep_ip_list, ['rdepjson1', 'rdepjson3'], get_notice(t, 'rdep_ip_list [\'rdepjson1\',\'rdepjson3\']'));
+                unlink_file_callback(jsonfile, 'jsonfile', t, function () {
+                    unlink_file_callback(depjsonfile, 'depjsonfile', t, function () {
+                        unlink_file_callback(rdepjsonfile, 'rdepjsonfile', t, function () {
+                            t.end();
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
