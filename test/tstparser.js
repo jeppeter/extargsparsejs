@@ -599,3 +599,78 @@ test('A022', function (t) {
     t.equal(flag.typename, 'help', get_notice(t, 'help typename help'));
     t.end();
 });
+
+var assert_get_subcommand = function (cmds, cmdname) {
+    'use strict';
+    var idx;
+    for (idx = 0; idx < cmds.length; idx += 1) {
+        if (cmds[idx] === cmdname) {
+            return cmds[idx];
+        }
+    }
+    return null;
+};
+
+test('A023', function (t) {
+    'use strict';
+    var commandline = `{ "verbose|v" : "+","dep" : {"new|n" : false,"$<NARGS>" : "+"},"rdep" : {"new|n" : true,"$<NARGS>" : "?"}}`;
+    var parser;
+    var cmds;
+    var cmd;
+    var opts;
+    var opt;
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    cmds = parser.get_subcommands();
+    t.equal(cmds.length, 2, get_notice(t, 'cmds length'));
+    console.log('cmds %s', cmds);
+    cmd = assert_get_subcommand(cmds, 'dep');
+    t.equal(cmd, 'dep', get_notice(t, 'cmd dep'));
+    cmd = assert_get_subcommand(cmds, 'rdep');
+    t.equal(cmd, 'rdep', get_notice(t, 'cmd rdep'));
+    opts = parser.get_cmdopts();
+    t.equal(opts.length, 4, get_notice(t, 'opts length'));
+    opt = assert_get_opt(opts, '$');
+    t.equal(opt.nargs, '*');
+    opt = assert_get_opt(opts, 'verbose');
+    t.equal(opt.typename, 'count');
+    opt = assert_get_opt(opts, 'json');
+    t.equal(opt.typename, 'jsonfile');
+    opt = assert_get_opt(opts, 'help');
+    t.equal(opt.typename, 'help');
+    opts = parser.get_cmdopts('dep');
+    t.equal(opts.length, 4, get_notice(t, 'dep cmdopts length'));
+    opt = assert_get_opt(opts, '$');
+    t.equal(opt.varname, 'NARGS', get_notice(t, 'dep $'));
+    opt = assert_get_opt(opts, 'help');
+    t.equal(opt.typename, 'help', get_notice(t, 'dep help'));
+    opt = assert_get_opt(opts, 'dep_json');
+    t.equal(opt.typename, 'jsonfile', get_notice(t, 'dep json'));
+    opt = assert_get_opt(opts, 'dep_new');
+    t.equal(opt.typename, 'boolean', get_notice(t, 'dep new'));
+    t.end();
+});
+
+test('A024', function (t) {
+    'use strict';
+    var commandline = `{"rdep" : {"ip" : {"modules" : [],"called" : true,"setname" : null,"$" : 2}},"dep" : {"port" : 5000,"cc|C" : true}, "verbose|v" : "+"}`;
+    var parser;
+    var args;
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    args = parser.parse_command_line(['rdep', 'ip', '--verbose', '--rdep-ip-modules', 'cc', '--rdep-ip-setname', 'bb', 'xx', 'bb']);
+    t.equal(args.subcommand, 'rdep.ip', get_notice(t, 'subcommand'));
+    t.equal(args.verbose, 1, get_notice(t, 'verbose'));
+    t.deepEqual(args.rdep_ip_modules, ['cc'], get_notice(t, 'rdep_ip_modules'));
+    t.deepEqual(args.rdep_ip_setname, 'bb', get_notice(t, 'rdep_ip_setname'));
+    t.deepEqual(args.subnargs, ['xx', 'bb'], get_notice(t, 'subnargs'));
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    args = parser.parse_command_line(['dep', '--verbose', '--verbose', '-vvC']);
+    t.equal(args.subcommand, 'dep', get_notice(t, 'subcommand'));
+    t.equal(args.verbose, 4, get_notice(t, 'verbose'));
+    t.equal(args.dep_port, 5000, get_notice(t, 'dep_port'));
+    t.equal(args.dep_cc, false, get_notice(t, 'dep_cc'));
+    t.deepEqual(args.subnargs, [], get_notice(t, 'subnargs'));
+    t.end();
+});

@@ -2536,6 +2536,8 @@ function ExtArgsParse(option) {
         var copysarr;
         var cmdpathslen;
         var kdx;
+        var idx;
+        var c;
         if (!not_null(cmdpaths)) {
             cmdpaths = null;
         }
@@ -2548,14 +2550,15 @@ function ExtArgsParse(option) {
             retnames = [];
             cmdpathslen = cmdpaths.length;
             cmdpaths[(cmdpathslen - 1)].subcommands.forEach(function (c) {
-                retnames.push(c);
+                retnames.push(c.cmdname);
             });
             return retnames.sort();
         }
 
         sarr = cmdname.split('.');
         cmdpathslen = cmdpaths.length;
-        cmdpaths[(cmdpathslen - 1)].subcommands.forEach(function (c) {
+        for (idx = 0; idx < cmdpaths[(cmdpathslen - 1)].subcommands.length; idx += 1) {
+            c = cmdpaths[(cmdpathslen - 1)].subcommands[idx];
             if (c.cmdname === sarr[0]) {
                 cmdpaths.push(c);
                 copysarr = [];
@@ -2564,8 +2567,7 @@ function ExtArgsParse(option) {
                 }
                 return innerself.inner_get_subcommands(copysarr.join('.'), cmdpaths);
             }
-        });
-
+        }
         if (not_null(retnames)) {
             return retnames.sort();
         }
@@ -2662,6 +2664,8 @@ function ExtArgsParse(option) {
         var cmdpathslen;
         var kdx;
         var copysarr;
+        var idx;
+        var curcmd;
         if (!not_null(cmdpaths)) {
             cmdpaths = [innerself.maincmd];
         }
@@ -2673,7 +2677,8 @@ function ExtArgsParse(option) {
         }
         sarr = cmdname.split('.');
         cmdpathslen = cmdpaths.length;
-        cmdpaths[(cmdpathslen - 1)].subcommands.forEach(function (curcmd) {
+        for (idx = 0; idx < cmdpaths[(cmdpathslen - 1)].subcommands.length; idx += 1) {
+            curcmd = cmdpaths[(cmdpathslen - 1)].subcommands[idx];
             if (curcmd.cmdname === sarr[0]) {
                 copycmds = [];
                 for (kdx = 0; kdx < cmdpathslen; kdx += 1) {
@@ -2686,7 +2691,7 @@ function ExtArgsParse(option) {
                 }
                 return innerself.inner_get_cmdopts(copysarr.join('.'), copycmds);
             }
-        });
+        }
         return null;
     };
 
