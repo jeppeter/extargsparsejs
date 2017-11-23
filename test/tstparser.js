@@ -3,6 +3,7 @@ var test = require('tape');
 var util = require('util');
 var fs = require('fs');
 var mktemp = require('mktemp');
+var chldproc = require('child_process');
 
 var get_notice = function (t, name) {
     'use strict';
@@ -19,12 +20,14 @@ var delete_variable = function (name) {
 
 var renew_variable = function (name, value) {
     'use strict';
+    var oldval = null;
     if (process.env[name] !== undefined) {
+        oldval = process.env[name];
         delete process.env[name];
     }
 
     process.env[name] = value;
-    return;
+    return oldval;
 };
 
 
@@ -66,6 +69,175 @@ var unlink_file_callback = function (filename, notice, t, callback) {
     });
 };
 
+
+function CmdOut(cmdline, callback) {
+    'use strict';
+    var self = {};
+    var innerself = {};
+
+
+    innerself.init_fn = function () {
+        innerself.out_string = '';
+        innerself.err_string = '';
+        innerself.callback = null;
+        innerself.exited = 0;
+        innerself.exit_code = -1;
+        if (callback !== undefined && callback !== null) {
+            innerself.callback = callback;
+        }
+        innerself.chld = chldproc.exec(cmdline);
+        innerself.chld.stdout.on('data', function (data) {
+            innerself.out_string += data;
+        });
+        innerself.chld.stderr.on('data', function (data) {
+            innerself.err_string += data;
+        });
+
+        innerself.chld.on('close', function (code) {
+            innerself.exited = 1;
+            innerself.exit_code = code;
+            if (innerself.callback !== null) {
+                innerself.callback(self);
+            }
+        });
+
+        return self;
+    };
+
+    self.out_value = function () {
+        return innerself.out_string;
+    };
+
+    self.err_value = function () {
+        return innerself.err_string;
+    };
+
+    self.exit_code = function () {
+        return innerself.exit_code;
+    };
+    self.get_commandline = function () {
+        return innerself.commandline;
+    };
+
+    return innerself.init_fn();
+}
+
+
+var call_args_function = function (args) {
+    'use strict';
+    var context = this;
+    context.has_called_args = args.subcommand;
+    return;
+};
+exports.call_args_function = call_args_function;
+
+var assert_get_opt = function (opts, optname) {
+    'use strict';
+    var idx;
+    var c;
+    for (idx = 0; idx < opts.length; idx += 1) {
+        c = opts[idx];
+        if (c.isflag) {
+            if (optname === '$' && c.flagname === '$') {
+                return c;
+            }
+            if (c.flagname !== '$') {
+                if (c.optdest === optname) {
+                    return c;
+                }
+            }
+        }
+    }
+    return null;
+};
+
+function StringIO() {
+    'use strict';
+    var self = {};
+    var innerself = {};
+
+    innerself.init_fn = function () {
+        innerself.inner_buffer = '';
+        return self;
+    };
+
+    self.write = function (input, callback) {
+        innerself.inner_buffer += input;
+        if (callback !== undefined && callback !== null) {
+            callback(null);
+        }
+        return;
+    };
+    self.getvalue = function () {
+        return innerself.inner_buffer;
+    };
+
+    return innerself.init_fn();
+}
+
+var split_strings = function (inputstr) {
+    'use strict';
+    var retsarr = [];
+    var sarr;
+    var idx;
+    if (typeof inputstr === 'string' && inputstr.length > 0) {
+        sarr = inputstr.split('\n');
+        for (idx = 0; idx < sarr.length; idx += 1) {
+            retsarr.push(sarr[idx].replace(/[\r\n]+$/, ''));
+        }
+    }
+    return retsarr;
+};
+
+var assert_string_expr = function (lines, exprstr) {
+    'use strict';
+    var idx;
+    var reg = new RegExp(exprstr);
+
+    for (idx = 0; idx < lines.length; idx += 1) {
+        if (reg.test(lines[idx])) {
+            return true;
+        }
+    }
+    return false;
+};
+
+var get_opt_split_string = function (lines, opt) {
+    'use strict';
+    var exprstr;
+    if (opt.typename === 'args') {
+        return true;
+    }
+    exprstr = util.format('^\\s+%s', opt.longopt);
+    if (opt.shortopt !== null) {
+        exprstr += util.format('|%s', opt.shortopt);
+    }
+    exprstr += '\\s+';
+    if (opt.nargs !== 0) {
+        exprstr += util.format('%s', opt.optdest);
+    }
+    exprstr += '.*';
+    return assert_string_expr(lines, exprstr);
+};
+
+var assert_get_subcommand = function (cmds, cmdname) {
+    'use strict';
+    var idx;
+    for (idx = 0; idx < cmds.length; idx += 1) {
+        if (cmds[idx] === cmdname) {
+            return cmds[idx];
+        }
+    }
+    return null;
+};
+
+var environ_key_set = function (keyname) {
+    'use strict';
+    if (process.env[keyname] === undefined || process.env[keyname] === null) {
+        return false;
+    }
+    return true;
+};
 
 test('A001', function (t) {
     'use strict';
@@ -132,13 +304,6 @@ test('A004', function (t) {
     t.end();
 });
 
-var call_args_function = function (args) {
-    'use strict';
-    var context = this;
-    context.has_called_args = args.subcommand;
-    return;
-};
-exports.call_args_function = call_args_function;
 
 test('A005', function (t) {
     'use strict';
@@ -500,25 +665,6 @@ test('A021', function (t) {
     t.end();
 });
 
-var assert_get_opt = function (opts, optname) {
-    'use strict';
-    var idx;
-    var c;
-    for (idx = 0; idx < opts.length; idx += 1) {
-        c = opts[idx];
-        if (c.isflag) {
-            if (optname === '$' && c.flagname === '$') {
-                return c;
-            }
-            if (c.flagname !== '$') {
-                if (c.optdest === optname) {
-                    return c;
-                }
-            }
-        }
-    }
-    return null;
-};
 
 
 test('A022', function (t) {
@@ -551,16 +697,6 @@ test('A022', function (t) {
     t.end();
 });
 
-var assert_get_subcommand = function (cmds, cmdname) {
-    'use strict';
-    var idx;
-    for (idx = 0; idx < cmds.length; idx += 1) {
-        if (cmds[idx] === cmdname) {
-            return cmds[idx];
-        }
-    }
-    return null;
-};
 
 test('A023', function (t) {
     'use strict';
@@ -627,14 +763,6 @@ test('A024', function (t) {
 });
 
 
-var environ_key_set = function (keyname) {
-    'use strict';
-    if (process.env[keyname] === undefined || process.env[keyname] === null) {
-        return false;
-    }
-    return true;
-};
-
 test('A025', function (t) {
     'use strict';
     var commandline = `{"verbose|v" : "+","+http" : {"url|u" : "http://www.google.com","visual_mode|V": false},"$port|p" : {"value" : 3000,"type" : "int","nargs" : 1 , "helpinfo" : "port to connect"},"dep" : {"list|l" : [],"string|s" : "s_var","$" : "+","ip" : {"verbose" : "+","list" : [],"cc" : []}},"rdep" : {"ip" : {"verbose" : "+","list" : [],"cc" : []}}}`;
@@ -686,74 +814,6 @@ test('A025', function (t) {
 });
 
 
-function StringIO() {
-    'use strict';
-    var self = {};
-    var innerself = {};
-
-    innerself.init_fn = function () {
-        innerself.inner_buffer = '';
-        return self;
-    };
-
-    self.write = function (input, callback) {
-        innerself.inner_buffer += input;
-        if (callback !== undefined && callback !== null) {
-            callback(null);
-        }
-        return;
-    };
-    self.getvalue = function () {
-        return innerself.inner_buffer;
-    };
-
-    return innerself.init_fn();
-}
-
-var split_strings = function (inputstr) {
-    'use strict';
-    var retsarr = [];
-    var sarr;
-    var idx;
-    if (typeof inputstr === 'string' && inputstr.length > 0) {
-        sarr = inputstr.split('\n');
-        for (idx = 0; idx < sarr.length; idx += 1) {
-            retsarr.push(sarr[idx].replace(/[\r\n]+$/, ''));
-        }
-    }
-    return retsarr;
-};
-
-var assert_string_expr = function (lines, exprstr) {
-    'use strict';
-    var idx;
-    var reg = new RegExp(exprstr);
-
-    for (idx = 0; idx < lines.length; idx += 1) {
-        if (reg.test(lines[idx])) {
-            return true;
-        }
-    }
-    return false;
-};
-
-var get_opt_split_string = function (lines, opt) {
-    'use strict';
-    var exprstr;
-    if (opt.typename === 'args') {
-        return true;
-    }
-    exprstr = util.format('^\\s+%s', opt.longopt);
-    if (opt.shortopt !== null) {
-        exprstr += util.format('|%s', opt.shortopt);
-    }
-    exprstr += '\\s+';
-    if (opt.nargs !== 0) {
-        exprstr += util.format('%s', opt.optdest);
-    }
-    exprstr += '.*';
-    return assert_string_expr(lines, exprstr);
-};
 
 test('A026', function (t) {
     'use trict';
@@ -842,5 +902,61 @@ test('A028', function (t) {
         ok = 1;
     }
     t.equal(ok, 1, get_notice(t, 'raise exception'));
+    t.end();
+});
+
+test('A029', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "+http" : {                "url|u" : "http://www.google.com",                "visual_mode|V": false            },            "$port|p" : {                "value" : 3000,                "type" : "int",                "nargs" : 1 ,                 "helpinfo" : "port to connect"            },            "dep" : {                "list|l!attr=cc;optfunc=list_opt_func!" : [],                "string|s" : "s_var",                "$" : "+",                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            },            "rdep" : {                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            }        }`;
+    var parser;
+    var options;
+    var sio;
+    options = extargsparse.ExtArgsOption();
+    options.helphandler = 'nohelp';
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    sio = new StringIO();
+    parser.print_help(sio);
+    t.equal(sio.getvalue(), 'no help information', get_notice(t, 'no help'));
+    t.end();
+});
+
+test('A030', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "+http" : {                "url|u" : "http://www.google.com",                "visual_mode|V": false            },            "$port|p" : {                "value" : 3000,                "type" : "int",                "nargs" : 1 ,                 "helpinfo" : "port to connect"            },            "dep<dep_handler>!opt=cc!" : {                "list|l!attr=cc;optfunc=list_opt_func!" : [],                "string|s" : "s_var",                "$" : "+",                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            },            "rdep<rdep_handler>" : {                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            }        }`;
+    var parser;
+    var flag;
+
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    flag = parser.get_cmdkey(null);
+    t.equal(flag.iscmd, true, get_notice(t, 'cmdkey true'));
+    t.equal(flag.cmdname, 'main', get_notice(t, 'cmdkey main'));
+    t.equal(flag.function, null, get_notice(t, 'cmdkey function'));
+
+    flag = parser.get_cmdkey('dep');
+    t.equal(flag.cmdname, 'dep', get_notice(t, 'dep cmdname'));
+    t.equal(flag.function, 'dep_handler', get_notice(t, 'dep function'));
+    t.equal(flag.attr.opt, 'cc', get_notice(t, 'dep attr.opt'));
+
+    flag = parser.get_cmdkey('rdep');
+    t.equal(flag.function, 'rdep_handler', get_notice(t, 'rdep function'));
+    t.equal(flag.attr, null, get_notice(t, 'rdep attr'));
+
+    flag = parser.get_cmdkey('nosuch');
+    t.equal(flag, null, get_notice(t, 'nosuch'));
+    t.end();
+});
+
+test('A031', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "catch|C## to not catch the exception ##" : true,            "input|i## to specify input default(stdin)##" : null,            "$caption## set caption ##" : "runcommand",            "test|t##to test mode##" : false,            "release|R##to release test mode##" : false,            "$" : "*"        }`;
+    var parser;
+    var args;
+
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    args = parser.parse_command_line(['--test']);
+    t.equal(args.test, true, get_notice(t, 'test true'));
     t.end();
 });

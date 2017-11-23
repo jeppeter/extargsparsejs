@@ -2587,17 +2587,21 @@ function ExtArgsParse(option) {
         var copysarr;
         var cmdpathslen;
         var kdx;
+        var idx;
+        var c;
         if (!not_null(cmdpaths)) {
             cmdpaths = [innerself.maincmd];
         }
+        retkey = null;
         if (!not_null(cmdname) || cmdname.length === 0) {
             cmdpathslen = cmdpaths.length;
             retkey = cmdpaths[(cmdpathslen - 1)].keycls;
             return retkey;
         }
         sarr = cmdname.split('.');
-        cmdpathslen = sarr.length;
-        sarr[(cmdpathslen - 1)].subcommands.forEach(function (c) {
+        cmdpathslen = cmdpaths.length;
+        for (idx = 0; idx < cmdpaths[(cmdpathslen - 1)].subcommands.length; idx += 1) {
+            c = cmdpaths[(cmdpathslen - 1)].subcommands[idx];
             if (c.cmdname === sarr[0]) {
                 copycmds = [];
                 for (kdx = 0; kdx < cmdpaths.length; kdx += 1) {
@@ -2610,7 +2614,7 @@ function ExtArgsParse(option) {
                 }
                 return innerself.inner_get_cmdkey(copysarr.join('.'), copycmds);
             }
-        });
+        }
         return null;
     };
 

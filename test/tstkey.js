@@ -657,7 +657,7 @@ test('A035', function (t) {
     t.equal(keycls.cmdname, null, get_notice(t, 'cmdname'));
     t.equal(keycls.function, null, get_notice(t, 'function'));
     t.equal(keycls.varname, 'newargs', get_notice(t, 'varname'));
-    t.equal(keycls.attr, undefined, get_notice(t, 'attr'));
+    t.equal(keycls.attr, null, get_notice(t, 'attr'));
     opt_fail_check(t, keycls);
     t.end();
 });
@@ -678,7 +678,7 @@ test('A036', function (t) {
     t.equal(keycls.function, null, get_notice(t, 'function'));
     t.equal(keycls.varname, 'newargs', get_notice(t, 'varname'));
     attr = keycls.attr;
-    t.notEqual(attr, undefined, get_notice(t, 'attr'));
+    t.notEqual(attr, null, get_notice(t, 'attr'));
     t.equal(attr.func, 'args_opt_func', get_notice(t, 'attr.func'));
     t.equal(attr.wait, 'cc', get_notice(t, 'attr.wait'));
     opt_fail_check(t, keycls);
@@ -701,7 +701,7 @@ test('A037', function (t) {
     t.equal(keycls.function, null, get_notice(t, 'function'));
     t.equal(keycls.varname, 'prefix_help', get_notice(t, 'varname'));
     attr = keycls.attr;
-    t.notEqual(attr, undefined, get_notice(t, 'attr'));
+    t.notEqual(attr, null, get_notice(t, 'attr'));
     t.equal(attr.func, 'args_opt_func', get_notice(t, 'attr.func'));
     t.equal(attr.wait, 'cc', get_notice(t, 'attr.wait'));
     t.equal(keycls.longopt, '--help', get_notice(t, 'longopt'));
@@ -786,7 +786,7 @@ test('A042', function (t) {
     t.equal(keycls.prefix, 'main', get_notice(t, 'prefix'));
     t.equal(keycls.isflag, false, get_notice(t, 'isflag'));
     t.equal(keycls.iscmd, true, get_notice(t, 'iscmd'));
-    t.equal(keycls.attr, undefined, get_notice(t, 'attr'));
+    t.equal(keycls.attr, null, get_notice(t, 'attr'));
     t.equal(keycls.cmdname, 'main', get_notice(t, 'cmdname'));
     t.equal(keycls.function, null, get_notice(t, 'function'));
     opt_fail_check(t, keycls);

@@ -312,7 +312,7 @@ function KeyParser(prefix, key, value, isflag, ishelp, isjsonfile, longprefix, s
         dict.iscmd = false;
         dict.isflag = false;
         dict.typename = null;
-        dict.attr = undefined;
+        dict.attr = null;
         dict.nochange = false;
         dict.longprefix = '--';
         dict.shortprefix = '-';
