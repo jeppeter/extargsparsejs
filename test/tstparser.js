@@ -296,6 +296,13 @@ var debug_set_2_args = function (args, validx, keycls, params) {
 
 exports.debug_set_2_args = debug_set_2_args;
 
+var debug_opthelp_set = function (keycls) {
+    'use strict';
+    return util.format('opthelp function set [%s] default value (%s)', keycls.optdest, keycls.value);
+};
+
+exports.debug_opthelp_set = debug_opthelp_set;
+
 
 test('A001', function (t) {
     'use strict';
@@ -1338,5 +1345,36 @@ test('A045', function (t) {
     t.equal(args.subcommand, 'ipxe', get_notice(t, 'subcommand ipxe'));
     t.deepEqual(args.subnargs, ['dd'], get_notice(t, 'subnargs [dd]'));
     t.deepEqual(args.pair, ['initrd', 'cc'], get_notice(t, 'pair [initrd,cc]'));
+    t.end();
+});
+
+test('A046', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "kernel|K" : "/boot/",            "initrd|I" : "/boot/",            "pair|P!optparse=debug_set_2_args;opthelp=debug_opthelp_set!" : [],            "encryptfile|e" : null,            "encryptkey|E" : null,            "setupsectsoffset" : 663,            "ipxe" : {                "$" : "+"            }        }`;
+    var parser;
+    var options;
+    var sio;
+    var sarr;
+    var matchexpr;
+    var idx;
+    var ok = false;
+    setup_before(t);
+    options = extargsparse.ExtArgsOption();
+    options.parseall = true;
+    options.longprefix = '++';
+    options.shortprefix = '+';
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    sio = new StringIO();
+    parser.print_help(sio);
+    sarr = split_strings(sio.getvalue());
+    matchexpr = new RegExp('.*opthelp function set \\[pair\\].*');
+    for (idx = 0; idx < sarr.length; idx += 1) {
+        if (matchexpr.test(sarr[idx])) {
+            ok = true;
+            break;
+        }
+    }
+    t.equal(ok, true, get_notice(t, 'debug_opthelp_set ok'));
     t.end();
 });
