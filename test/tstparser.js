@@ -139,6 +139,33 @@ var split_strings = function (inputstr) {
     return retsarr;
 };
 
+var regex_string_slash = function (s) {
+    'use strict';
+    var rets = '';
+    var idx;
+    var c;
+    for (idx = 0; idx < s.length; idx += 1) {
+        c = s[idx];
+        if (c === '[') {
+            rets += '\\[';
+        } else if (c === ']') {
+            rets += '\\]';
+        } else if (c === '\\') {
+            rets += '\\\\';
+        } else if (c === '*') {
+            rets += '\\*';
+        } else if (c === '+') {
+            rets += '\\+';
+        } else if (c === '?') {
+            rets += '\\?';
+        } else {
+            rets += c;
+        }
+    }
+    return rets;
+};
+
+
 var assert_string_expr = function (lines, exprstr) {
     'use strict';
     var idx;
@@ -158,13 +185,13 @@ var get_opt_split_string = function (lines, opt) {
     if (opt.typename === 'args') {
         return true;
     }
-    exprstr = util.format('^\\s+%s', opt.longopt);
+    exprstr = util.format('^\\s+%s', regex_string_slash(opt.longopt));
     if (opt.shortopt !== null) {
-        exprstr += util.format('|%s', opt.shortopt);
+        exprstr += util.format('|%s', regex_string_slash(opt.shortopt));
     }
     exprstr += '\\s+';
     if (opt.nargs !== 0) {
-        exprstr += util.format('%s', opt.optdest);
+        exprstr += util.format('%s', regex_string_slash(opt.optdest));
     }
     exprstr += '.*';
     return assert_string_expr(lines, exprstr);
@@ -241,12 +268,38 @@ function CmdOut(cmdline, callback) {
     return innerself.init_fn();
 }
 
+var quote_string = function (s) {
+    'use strict';
+    var rets = '';
+    var c;
+    var idx;
+    for (idx = 0; idx < s.length; idx += 1) {
+        c = s[idx];
+        if (c === '\'') {
+            rets += '\\\'';
+        } else if (c === '\\') {
+            rets += '\\\\';
+        } else if (c === '\n') {
+            rets += '\\n';
+        } else if (c === '\r') {
+            rets += '\\r';
+        } else if (c === '\`') {
+            rets += '\\\`';
+        } else {
+            rets += c;
+        }
+    }
+    return rets;
+};
 
-var write_script = function (cmdlinejson, t, callback) {
+
+var write_script = function (cmdlinejson, options, t, callback) {
     'use strict';
     var scriptwrite = '';
     var absdir = path.resolve(__dirname);
     var impdir = path.join(absdir, '..');
+    var keys;
+    var idx;
     impdir = path.resolve(impdir);
     scriptwrite += 'var extargsparse = require(\'';
     scriptwrite += upath.toUnix(impdir);
@@ -255,7 +308,20 @@ var write_script = function (cmdlinejson, t, callback) {
     scriptwrite += cmdlinejson;
     scriptwrite += '\`;\n';
     scriptwrite += 'var parser;\n';
-    scriptwrite += 'parser = extargsparse.ExtArgsParse();\n';
+    scriptwrite += 'var options;\n';
+    scriptwrite += 'options = new extargsparse.ExtArgsOption();\n';
+    if (options !== undefined && options !== null) {
+        keys = Object.keys(options);
+        for (idx = 0; idx < keys.length; idx += 1) {
+            if (typeof options[keys[idx]] === 'string') {
+                scriptwrite += util.format('options.%s = \'%s\';\n', keys[idx], quote_string(options[keys[idx]]));
+            } else if (typeof options[keys[idx]] !== 'function') {
+                scriptwrite += util.format('options.%s = %s;\n', keys[idx], options[keys[idx]]);
+            }
+
+        }
+    }
+    scriptwrite += 'parser = extargsparse.ExtArgsParse(options);\n';
     scriptwrite += 'parser.load_command_line_string(commandline);\n';
     scriptwrite += 'parser.parse_command_line();\n';
     write_file_callback('exthelpXXXXXX.js', scriptwrite, t, 'script file', callback);
@@ -1035,10 +1101,11 @@ test('A032', function (t) {
     var opt;
     var sarr;
     setup_before(t);
-    write_script(commandline, t, function (tempf) {
+    write_script(commandline, null, t, function (tempf) {
         var command;
         command = util.format('node %s -h', upath.toUnix(tempf));
-        run_cmd_out(command, t, function (output) {
+        run_cmd_out(command, t, function (output, errout) {
+            errout = errout;
             parser = extargsparse.ExtArgsParse();
             parser.load_command_line_string(commandline);
             opts = parser.get_cmdopts();
@@ -1048,7 +1115,8 @@ test('A032', function (t) {
                 t.equal(get_opt_split_string(sarr, opt), true, get_notice(t, util.format('get opt [%s]', opt.flagname)));
             }
             command = util.format('node %s dep -h', upath.toUnix(tempf));
-            run_cmd_out(command, t, function (output2) {
+            run_cmd_out(command, t, function (output2, errout2) {
+                errout2 = errout2;
                 sarr = split_strings(output2);
                 opts = parser.get_cmdopts('dep');
                 for (idx = 0; idx < opts.length; idx += 1) {
@@ -1056,7 +1124,8 @@ test('A032', function (t) {
                     t.equal(get_opt_split_string(sarr, opt), true, get_notice(t, util.format('get dep opt [%s]', opt.flagname)));
                 }
                 command = util.format('node %s rdep -h', upath.toUnix(tempf));
-                run_cmd_out(command, t, function (output3) {
+                run_cmd_out(command, t, function (output3, errout3) {
+                    errout3 = errout3;
                     sarr = split_strings(output3);
                     opts = parser.get_cmdopts('rdep');
                     for (idx = 0; idx < opts.length; idx += 1) {
@@ -1377,4 +1446,41 @@ test('A046', function (t) {
     }
     t.equal(ok, true, get_notice(t, 'debug_opthelp_set ok'));
     t.end();
+});
+
+test('A047', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "kernel|K" : "/boot/",            "initrd|I" : "/boot/",            "pair|P!optparse=debug_set_2_args;opthelp=debug_opthelp_set!" : [],            "encryptfile|e" : null,            "encryptkey|E" : null,            "setupsectsoffset" : 663,            "ipxe" : {                "$" : "+"            }        }`;
+    var options;
+    var parser;
+    var sarr;
+    var opt;
+    var opts;
+    var idx;
+    setup_before(t);
+    options = extargsparse.ExtArgsOption();
+    options.parseall = true;
+    options.longprefix = '++';
+    options.shortprefix = '+';
+    options.helplong = 'usage';
+    options.helpshort = '?';
+    options.jsonlong = 'jsonfile';
+    write_script(commandline, options, t, function (tempf) {
+        var command;
+        command = util.format('node %s ++usage', upath.toUnix(tempf));
+        run_cmd_out(command, t, function (output, errout) {
+            errout = errout;
+            parser = extargsparse.ExtArgsParse(options);
+            parser.load_command_line_string(commandline);
+            opts = parser.get_cmdopts();
+            sarr = split_strings(output);
+            for (idx = 0; idx < opts.length; idx += 1) {
+                opt = opts[idx];
+                t.equal(get_opt_split_string(sarr, opt), true, get_notice(t, util.format('get opt [%s]', opt.flagname)));
+            }
+            unlink_file_callback(tempf, 'tempf', t, function () {
+                t.end();
+            });
+        });
+    });
 });
