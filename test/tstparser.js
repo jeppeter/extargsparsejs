@@ -1207,3 +1207,22 @@ test('A039', function (t) {
     t.equal(args.setupsectsoffset, 0x612, get_notice(t, 'setupsectsoffset 0x612'));
     t.end();
 });
+
+test('A040', function (t) {
+    'use strict';
+    var commandline = `        {            "+tce": {                "mirror": "http://repo.tinycorelinux.net",                "root": "/",                "tceversion": "7.x",                "wget": "wget",                "cat": "cat",                "rm": "rm",                "sudoprefix": "sudo",                "optional_dir": "/cde",                "trymode": false,                "platform": "x86_64",                "mount": "mount",                "umount": "umount",                "chroot": "chroot",                "chown": "chown",                "chmod": "chmod",                "mkdir": "mkdir",                "rollback": true,                "cp": "cp",                "jsonfile": null,                "perspace": 3,                "depmapfile": null,                "timeout": 10,                "listsfile": null,                "maxtries": 5            }        }        `;
+    var parser;
+    var args;
+    var tcebase = {};
+    setup_before(t);
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    args = parser.parse_command_line(['--tce-root', '/home/']);
+    extargsparse.set_attr_self(tcebase, args, 'tce');
+    t.equal(tcebase.tce_mirror, 'http://repo.tinycorelinux.net', get_notice(t, 'tce_mirror'));
+    t.equal(tcebase.tce_root, '/home/', get_notice(t, 'tce_root'));
+    t.equal(tcebase.tce_listsfile, null, get_notice(t, 'tce_listsfile'));
+    t.equal(tcebase.tce_maxtries, 5, get_notice(t, 'tce_maxtries'));
+    t.equal(tcebase.tce_timeout, 10, get_notice(t, 'tce_timeout'));
+    t.end();
+});
