@@ -1046,3 +1046,41 @@ test('A032', function (t) {
         });
     });
 });
+
+test('A033', function (t) {
+    'use strict';
+    var commandline;
+    var test_reserved_args = ['subcommand', 'subnargs', 'nargs', 'extargs', 'args'];
+    var cmd1_fmt = `        {            "%s" : true        }`;
+    var cmd2_fmt = `        {            "+%s" : {                "reserve": true            }        }`;
+    var cmd3_fmt = `        {            "%s" : {                "function" : 30            }        }`;
+    var cmd_fmts = [cmd1_fmt, cmd2_fmt, cmd3_fmt];
+    var parser;
+    var idx, jdx;
+    var options;
+    var curfmt;
+    var curargs;
+    var ok;
+    var e2;
+    setup_before(t);
+    for (idx = 0; idx < cmd_fmts.length; idx += 1) {
+        curfmt = cmd_fmts[idx];
+        for (jdx = 0; jdx < test_reserved_args.length; jdx += 1) {
+            curargs = test_reserved_args[jdx];
+            commandline = util.format(curfmt, curargs);
+            options = extargsparse.ExtArgsOption();
+            options.errorhandler = 'raise';
+            parser = extargsparse.ExtArgsParse(options);
+            ok = false;
+            try {
+                parser.load_command_line_string(commandline);
+            } catch (e) {
+                e2 = e;
+                e2 = e2;
+                ok = true;
+            }
+            t.equal(ok, true, get_notice(t, util.format('get [%d] reserved [%s]', idx, curargs)));
+        }
+    }
+    t.end();
+});
