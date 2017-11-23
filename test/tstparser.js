@@ -275,8 +275,26 @@ var run_cmd_out = function (cmdrun, t, callback) {
         }
         callback(execobj.out_value());
     });
-    runexec = runexec;
+    return runexec;
 };
+
+var debug_set_2_args = function (args, validx, keycls, params) {
+    'use strict';
+    var arr;
+    if ((validx + 2) > params.length) {
+        throw new Error('need 2 args');
+    }
+    arr = args[keycls.optdest];
+    if (arr === undefined || arr === null) {
+        arr = [];
+    }
+    arr.push(params[validx]);
+    arr.push(params[(validx + 1)]);
+    args[keycls.optdest] = arr;
+    return 2;
+};
+
+exports.debug_set_2_args = debug_set_2_args;
 
 
 test('A001', function (t) {
@@ -1300,5 +1318,25 @@ test('A044', function (t) {
     args = parser.parse_command_line(['+K', 'kernel', '++initrd', 'initrd', 'cc', 'dd', '+E', 'encryptkey', '+e', 'encryptfile', 'ipxe']);
     t.equal(args.subcommand, 'ipxe', get_notice(t, 'subcommand ipxe'));
     t.deepEqual(args.subnargs, ['cc', 'dd'], get_notice(t, 'subnargs [cc,dd]'));
+    t.end();
+});
+
+test('A045', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "kernel|K" : "/boot/",            "initrd|I" : "/boot/",            "pair|P!optparse=debug_set_2_args!" : [],            "encryptfile|e" : null,            "encryptkey|E" : null,            "setupsectsoffset" : 663,            "ipxe" : {                "$" : "+"            }        }`;
+    var parser;
+    var args;
+    var options;
+    setup_before(t);
+    options = extargsparse.ExtArgsOption();
+    options.parseall = true;
+    options.longprefix = '++';
+    options.shortprefix = '+';
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    args = parser.parse_command_line(['+K', 'kernel', '++pair', 'initrd', 'cc', 'dd', '+E', 'encryptkey', '+e', 'encryptfile', 'ipxe']);
+    t.equal(args.subcommand, 'ipxe', get_notice(t, 'subcommand ipxe'));
+    t.deepEqual(args.subnargs, ['dd'], get_notice(t, 'subnargs [dd]'));
+    t.deepEqual(args.pair, ['initrd', 'cc'], get_notice(t, 'pair [initrd,cc]'));
     t.end();
 });
