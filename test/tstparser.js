@@ -4,6 +4,8 @@ var util = require('util');
 var fs = require('fs');
 var mktemp = require('mktemp');
 var chldproc = require('child_process');
+var path = require('path');
+var upath = require('upath');
 
 var get_notice = function (t, name) {
     'use strict';
@@ -69,58 +71,6 @@ var unlink_file_callback = function (filename, notice, t, callback) {
     });
 };
 
-
-function CmdOut(cmdline, callback) {
-    'use strict';
-    var self = {};
-    var innerself = {};
-
-
-    innerself.init_fn = function () {
-        innerself.out_string = '';
-        innerself.err_string = '';
-        innerself.callback = null;
-        innerself.exited = 0;
-        innerself.exit_code = -1;
-        if (callback !== undefined && callback !== null) {
-            innerself.callback = callback;
-        }
-        innerself.chld = chldproc.exec(cmdline);
-        innerself.chld.stdout.on('data', function (data) {
-            innerself.out_string += data;
-        });
-        innerself.chld.stderr.on('data', function (data) {
-            innerself.err_string += data;
-        });
-
-        innerself.chld.on('close', function (code) {
-            innerself.exited = 1;
-            innerself.exit_code = code;
-            if (innerself.callback !== null) {
-                innerself.callback(self);
-            }
-        });
-
-        return self;
-    };
-
-    self.out_value = function () {
-        return innerself.out_string;
-    };
-
-    self.err_value = function () {
-        return innerself.err_string;
-    };
-
-    self.exit_code = function () {
-        return innerself.exit_code;
-    };
-    self.get_commandline = function () {
-        return innerself.commandline;
-    };
-
-    return innerself.init_fn();
-}
 
 
 var call_args_function = function (args) {
@@ -238,6 +188,96 @@ var environ_key_set = function (keyname) {
     }
     return true;
 };
+
+function CmdOut(cmdline, callback) {
+    'use strict';
+    var self = {};
+    var innerself = {};
+
+
+    innerself.init_fn = function () {
+        innerself.out_string = '';
+        innerself.err_string = '';
+        innerself.callback = null;
+        innerself.exited = 0;
+        innerself.exit_code = -1;
+        if (callback !== undefined && callback !== null) {
+            innerself.callback = callback;
+        }
+        innerself.chld = chldproc.exec(cmdline);
+        innerself.chld.stdout.on('data', function (data) {
+            innerself.out_string += data;
+        });
+        innerself.chld.stderr.on('data', function (data) {
+            innerself.err_string += data;
+        });
+
+        innerself.chld.on('close', function (code) {
+            innerself.exited = 1;
+            innerself.exit_code = code;
+            if (innerself.callback !== null) {
+                innerself.callback(self);
+            }
+        });
+
+        return self;
+    };
+
+    self.out_value = function () {
+        return innerself.out_string;
+    };
+
+    self.err_value = function () {
+        return innerself.err_string;
+    };
+
+    self.exit_code = function () {
+        return innerself.exit_code;
+    };
+    self.get_commandline = function () {
+        return innerself.commandline;
+    };
+
+    return innerself.init_fn();
+}
+
+
+var write_script = function (cmdlinejson, t, callback) {
+    'use strict';
+    var scriptwrite = '';
+    var absdir = path.resolve(__dirname);
+    var impdir = path.join(absdir, '..');
+    impdir = path.resolve(impdir);
+    scriptwrite += 'var extargsparse = require(\'';
+    scriptwrite += upath.toUnix(impdir);
+    scriptwrite += '\');\n';
+    scriptwrite += 'var commandline = \`';
+    scriptwrite += cmdlinejson;
+    scriptwrite += '\`;\n';
+    scriptwrite += 'var parser;\n';
+    scriptwrite += 'parser = extargsparse.ExtArgsParse();\n';
+    scriptwrite += 'parser.load_command_line_string(commandline);\n';
+    scriptwrite += 'parser.parse_command_line();\n';
+    write_file_callback('exthelpXXXXXX.js', scriptwrite, t, 'script file', callback);
+};
+
+var run_cmd_out = function (cmdrun, t, callback) {
+    'use strict';
+    var runexec;
+    var oldval = null;
+    oldval = renew_variable('EXTARGSPARSE_LOGLEVEL', '0');
+    runexec = new CmdOut(cmdrun, function (execobj) {
+        t.equal(execobj.exit_code(), 0, get_notice(t, util.format('[%s] exit [0]', cmdrun)));
+        if (oldval !== null) {
+            renew_variable('EXTARGSPARSE_LOGLEVEL', oldval);
+        } else {
+            delete_variable('EXTARGSPARSE_LOGLEVEL');
+        }
+        callback(execobj.out_value());
+    });
+    runexec = runexec;
+};
+
 
 test('A001', function (t) {
     'use strict';
@@ -959,4 +999,50 @@ test('A031', function (t) {
     args = parser.parse_command_line(['--test']);
     t.equal(args.test, true, get_notice(t, 'test true'));
     t.end();
+});
+
+test('A032', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "+http" : {                "url|u" : "http://www.google.com",                "visual_mode|V": false            },            "$port|p" : {                "value" : 3000,                "type" : "int",                "nargs" : 1 ,                 "helpinfo" : "port to connect"            },            "dep<dep_handler>!opt=cc!" : {                "list|l!attr=cc;optfunc=list_opt_func!" : [],                "string|s" : "s_var",                "$" : "+",                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            },            "rdep<rdep_handler>" : {                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            }        }`;
+    var parser;
+    var opts;
+    var idx;
+    var opt;
+    var sarr;
+    setup_before(t);
+    write_script(commandline, t, function (tempf) {
+        var command;
+        command = util.format('node %s -h', upath.toUnix(tempf));
+        run_cmd_out(command, t, function (output) {
+            parser = extargsparse.ExtArgsParse();
+            parser.load_command_line_string(commandline);
+            opts = parser.get_cmdopts();
+            sarr = split_strings(output);
+            for (idx = 0; idx < opts.length; idx += 1) {
+                opt = opts[idx];
+                t.equal(get_opt_split_string(sarr, opt), true, get_notice(t, util.format('get opt [%s]', opt.flagname)));
+            }
+            command = util.format('node %s dep -h', upath.toUnix(tempf));
+            run_cmd_out(command, t, function (output2) {
+                sarr = split_strings(output2);
+                opts = parser.get_cmdopts('dep');
+                for (idx = 0; idx < opts.length; idx += 1) {
+                    opt = opts[idx];
+                    t.equal(get_opt_split_string(sarr, opt), true, get_notice(t, util.format('get dep opt [%s]', opt.flagname)));
+                }
+                command = util.format('node %s rdep -h', upath.toUnix(tempf));
+                run_cmd_out(command, t, function (output3) {
+                    sarr = split_strings(output3);
+                    opts = parser.get_cmdopts('rdep');
+                    for (idx = 0; idx < opts.length; idx += 1) {
+                        opt = opts[idx];
+                        t.equal(get_opt_split_string(sarr, opt), true, get_notice(t, util.format('get rdep opt [%s]', opt.flagname)));
+                    }
+                    unlink_file_callback(tempf, 'tempf', t, function () {
+                        t.end();
+                    });
+                });
+            });
+        });
+    });
 });

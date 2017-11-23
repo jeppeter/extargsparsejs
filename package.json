@@ -12,7 +12,8 @@
   },
   "devDependencies": {
     "tape": "latest",
-    "mktemp": "latest"
+    "mktemp": "latest",
+    "upath" : "latest"
   },
   "keywords": [
     "command",

@@ -527,7 +527,8 @@ function ParserCompat(keycls, opt) {
             helpsize = self.get_help_size();
         }
 
-        if (not_null(self.usage)) {
+        if (not_null(self.usage) && self.usage.length > 0) {
+            self.info(util.format('usage [%s]', self.usage));
             retstr += self.usage;
         } else {
             rootcmds = self;
@@ -1816,9 +1817,8 @@ function ExtArgsParse(option) {
         for (idx = 0; idx < keys.length; idx += 1) {
             k = keys[idx];
             v = d[k];
-            self.info(util.format('%s , %s , %s , True', prefix, k, v));
             keycls = keyparse.KeyParser(prefix, k, v, false, false, false, innerself.longprefix, innerself.shortprefix, innerself.options.flagnochange);
-            self.info(util.format('type [%s]', keycls.typename));
+            self.info(util.format('%s , %s , %s , True type[%s]', prefix, k, v, keycls.typename));
             valid = innerself.inner_load_command_map[keycls.typename](prefix, keycls, parentpath);
             if (!valid) {
                 self.error_msg(util.format('can not add (%s, %s)', k, v));
@@ -2406,11 +2406,12 @@ function ExtArgsParse(option) {
 
         if (!not_null(params)) {
             params = [];
-            for (kdx = 0; kdx < process.argv.length; kdx += 1) {
+            for (kdx = 2; kdx < process.argv.length; kdx += 1) {
                 params.push(process.argv[kdx]);
             }
         }
 
+        self.info(util.format('params [%s]', params));
         parsestate = new ParseState(params, innerself.maincmd, innerself.options);
         self.info(util.format('parsestate [%s]', parsestate));
         args = {};
