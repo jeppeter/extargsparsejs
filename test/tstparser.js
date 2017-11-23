@@ -1283,3 +1283,22 @@ test('A043', function (t) {
     t.deepEqual(args.subnargs, ['cc', 'dd'], get_notice(t, 'subnargs [cc,dd]'));
     t.end();
 });
+
+test('A044', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "kernel|K" : "/boot/",            "initrd|I" : "/boot/",            "encryptfile|e" : null,            "encryptkey|E" : null,            "setupsectsoffset" : 663,            "ipxe" : {                "$" : "+"            }        }`;
+    var parser;
+    var args;
+    var options;
+    setup_before(t);
+    options = extargsparse.ExtArgsOption();
+    options.parseall = true;
+    options.longprefix = '++';
+    options.shortprefix = '+';
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    args = parser.parse_command_line(['+K', 'kernel', '++initrd', 'initrd', 'cc', 'dd', '+E', 'encryptkey', '+e', 'encryptfile', 'ipxe']);
+    t.equal(args.subcommand, 'ipxe', get_notice(t, 'subcommand ipxe'));
+    t.deepEqual(args.subnargs, ['cc', 'dd'], get_notice(t, 'subnargs [cc,dd]'));
+    t.end();
+});
