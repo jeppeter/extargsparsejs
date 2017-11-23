@@ -1965,3 +1965,40 @@ test('A056', function (t) {
     }
     t.end();
 });
+
+test('A057', function (t) {
+    'use strict';
+    var commandline = `        {            "asn1parse" : {                "$" : 0,                "$inform!optparse=inform_optparse;completefunc=inform_complete!" : null,                "$in" : null,                "$out" : null,                "$noout" : false,                "$offset" : 0,                "$length" : -1,                "$dump" : false,                "$dlimit" : -1,                "$oid" : null,                "$strparse" : 0,                "$genstr" : null,                "$genconf" : null            },            "ca" : {                "$" : 0,                "$config" : null,                "$name" : null,                "$in" : null,                "$ss_cert" : null,                "$spkac" : null,                "$infiles" : null,                "$out" : null,                "$outdir" : null,                "$cert" : null,                "$keyfile" : null,                "$keyform!optparse=inform_optparse;completefunc=inform_complete!" : null,                "$key" : null,                "$selfsign" : false,                "$passin" : null,                "$verbose" : "+",                "$notext" : false,                "$startdate" : null,                "$enddate" : null,                "$days" : 30,                "$md" : null,                "$policy" : null,                "$preserveDN" : false,                "$msie_hack" : false,                "$noemailDN" : false,                "$batch" : false,                "$extensions" : null,                "$extfile" : null,                "$engine" : null,                "$subj" : null,               "$utf8" : false,                "$multivalue-rdn" : false,                "$gencrl" : false,                "$crldays" : 30,                "$crlhours" : -1,                "$revoke" : null,                "$status" : null,                "$updatedb" : false,                "$crl_reason" : null,                "$crl_hold" : null,                "$crl_compromise" : null,                "$crl_CA_compromise" : null,                "$crlexts" : null            }        }        `;
+    var options;
+    var optionstr = `        {            "longprefix" : "-",            "shortprefix" : "-",            "nojsonoption" : true,            "cmdprefixadded" : false,            "flagnochange" : true        }`;
+    var parser;
+    var optnames;
+    var cmdopts;
+    var opt;
+    var idx;
+
+    setup_before(t);
+    options = extargsparse.ExtArgsOption(optionstr);
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    t.deepEqual(parser.get_subcommands(), ['asn1parse', 'ca'], get_notice(t, 'subcommands'));
+    optnames = ['config', 'name', 'in', 'ss_cert', 'spkac', 'infiles', 'out', 'outdir', 'cert', 'keyfile', 'keyform', 'key', 'selfsign', 'passin', 'verbose', 'notext', 'startdate', 'enddate', 'days', 'md', 'policy', 'preserveDN', 'msie_hack', 'noemailDN', 'batch', 'extensions', 'extfile', 'engine', 'subj', 'utf8', 'gencrl', 'crldays', 'crlhours', 'revoke', 'status', 'updatedb', 'crl_reason', 'crl_hold', 'crl_compromise', 'crl_CA_compromise', 'crlexts'];
+    cmdopts = parser.get_cmdopts('ca');
+    for (idx = 0; idx < cmdopts.length; idx += 1) {
+        opt = cmdopts[idx];
+        if (opt.isflag && opt.typename !== 'args') {
+            if (opt.typename === 'help') {
+                t.equal(opt.longopt, '-help', get_notice(t, 'opt help'));
+                t.equal(opt.shortopt, '-h', get_notice(t, 'short opt help'));
+            } else {
+                if (opt.longopt === '-multivalue-rdn') {
+                    t.equal(opt.optdest, 'multivalue_rdn', get_notice(t, util.format('optdest [%s]', opt.optdest)));
+                } else {
+                    t.ok(optnames.indexOf(opt.optdest) >= 0, get_notice(t, util.format('optdest [%s]', opt.optdest)));
+                    t.equal(opt.longopt, util.format('-%s', opt.optdest), get_notice(t, util.format('optlong [%s]', opt.longopt)));
+                }
+            }
+        }
+    }
+    t.end();
+});
