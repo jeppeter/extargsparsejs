@@ -2668,7 +2668,7 @@ function ExtArgsParse(option) {
             }
 
             if (not_null(argsopt)) {
-                normalopts.push(argsopt);
+                normalopts.splice(0, 0, argsopt);
             }
         }
         return normalopts;

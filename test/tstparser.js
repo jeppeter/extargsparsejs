@@ -1146,3 +1146,27 @@ test('A035', function (t) {
         });
     });
 });
+
+test('A036', function (t) {
+    'use strict';
+    var commandline = `        {            "jsoninput|j##input json default stdin##" : null,            "input|i##input file to get default nothing - for stdin##" : null,            "output|o##output c file##" : null,            "verbose|v##verbose mode default(0)##" : "+",            "cmdpattern|c" : "%EXTARGS_CMDSTRUCT%",            "optpattern|O" : "%EXTARGS_STRUCT%",             "structname|s" : "args_options_t",            "funcname|F" : "debug_extargs_output",            "releasename|R" : "release_extargs_output",            "funcpattern" : "%EXTARGS_DEBUGFUNC%",            "prefix|p" : "",            "test" : {                "$" : 0            },            "optstruct" : {                "$" : 0            },            "cmdstruct" : {                "$" : 0            },            "debugfunc" : {                "$" : 0            },            "all" : {                "$" : 0            }        }`;
+    var parser;
+    var options;
+    var subcommands;
+    var cmdopts;
+    options = extargsparse.ExtArgsOption();
+    options.errorhandler = 'raise';
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    subcommands = parser.get_subcommands();
+    t.equal(subcommands.length, 5, get_notice(t, 'subcommands 5'));
+    t.deepEqual(subcommands, ['all', 'cmdstruct', 'debugfunc', 'optstruct', 'test'], get_notice(t, 'subcommands array'));
+    cmdopts = parser.get_cmdopts();
+    t.equal(cmdopts.length, 14, get_notice(t, 'cmdopts 14'));
+    t.equal(cmdopts[0].flagname, '$', get_notice(t, '[0].flagname $'));
+    t.equal(cmdopts[1].longopt, '--cmdpattern', get_notice(t, '[1].longopt --cmdpattern'));
+    t.equal(cmdopts[2].optdest, 'funcname', get_notice(t, '[2].optdest funcname'));
+    t.equal(cmdopts[3].varname, 'funcpattern', get_notice(t, '[3].varname funcpattern'));
+    t.equal(cmdopts[4].typename, 'help', get_notice(t, '[4].typename help'));
+    t.end();
+});
