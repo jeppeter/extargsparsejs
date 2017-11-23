@@ -797,3 +797,50 @@ test('A026', function (t) {
     }
     t.end();
 });
+
+test('A027', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "+http" : {                "url|u" : "http://www.google.com",                "visual_mode|V": false            },            "$port|p" : {                "value" : 3000,                "type" : "int",                "nargs" : 1 ,                 "helpinfo" : "port to connect"            },            "dep" : {                "list|l!attr=cc;optfunc=list_opt_func!" : [],                "string|s" : "s_var",                "$" : "+",                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            },            "rdep" : {                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            }        }`;
+    var parser;
+    var opts;
+    var attr;
+    var idx;
+    var curopt;
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    opts = parser.get_cmdopts('dep');
+    attr = null;
+    for (idx = 0; idx < opts.length; idx += 1) {
+        curopt = opts[idx];
+        if (curopt.typename !== 'args' && curopt.flagname === 'list') {
+            attr = curopt.attr;
+        }
+    }
+    t.ok(attr !== null, get_notice(t, 'list attr'));
+    t.equal(attr.attr, 'cc', get_notice(t, 'list attr.attr'));
+    t.equal(attr.optfunc, 'list_opt_func', get_notice(t, 'list attr.optfunc'));
+    t.end();
+});
+
+test('A028', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose<VAR1>|v" : "+",            "+http" : {                "url|u<VAR1>" : "http://www.google.com",                "visual_mode|V": false            },            "$port|p" : {                "value" : 3000,                "type" : "int",                "nargs" : 1 ,                 "helpinfo" : "port to connect"            },            "dep" : {                "list|l!attr=cc;optfunc=list_opt_func!" : [],                "string|s" : "s_var",                "$" : "+",                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            },            "rdep" : {                "ip" : {                    "verbose" : "+",                    "list" : [],                    "cc" : []                }            }        }`;
+    var parser;
+    var ok;
+    var options;
+    var e2;
+    ok = 0;
+    try {
+        options = extargsparse.ExtArgsOptions();
+        options.errorhandler = 'raise';
+        parser = extargsparse.ExtArgsParse(options);
+        parser.load_command_line_string(commandline);
+        parser.parse_command_line(['dep', 'cc']);
+    } catch (e) {
+        e2 = e;
+        e2 = e2;
+        ok = 1;
+    }
+    t.equal(ok, 1, get_notice(t, 'raise exception'));
+    t.end();
+});
