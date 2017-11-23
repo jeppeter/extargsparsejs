@@ -1932,3 +1932,36 @@ test('A055', function (t) {
         });
     });
 });
+
+test('A056', function (t) {
+    'use strict';
+    var commandline = `        {            "asn1parse" : {                "$" : 0,                "$inform!optparse=inform_optparse;completefunc=inform_complete!" : null,                "$in" : null,                "$out" : null,                "$noout" : false,                "$offset" : 0,                "$length" : -1,                "$dump" : false,                "$dlimit" : -1,                "$oid" : null,                "$strparse" : 0,                "$genstr" : null,                "$genconf" : null            }        }`;
+    var options;
+    var optionstr = `        {            "longprefix" : "-",            "shortprefix" : "-",            "nojsonoption" : true,            "cmdprefixadded" : false        }`;
+    var parser;
+    var optnames;
+    var cmdopts;
+    var opt;
+    var idx;
+
+    setup_before(t);
+    options = extargsparse.ExtArgsOption(optionstr);
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    t.deepEqual(parser.get_subcommands(), ['asn1parse'], get_notice(t, 'subcommands'));
+    optnames = ['inform', 'in', 'out', 'noout', 'offset', 'length', 'dump', 'dlimit', 'oid', 'strparse', 'genstr', 'genconf'];
+    cmdopts = parser.get_cmdopts('asn1parse');
+    for (idx = 0; idx < cmdopts.length; idx += 1) {
+        opt = cmdopts[idx];
+        if (opt.isflag && opt.typename !== 'args') {
+            if (opt.typename === 'help') {
+                t.equal(opt.longopt, '-help', get_notice(t, 'opt help'));
+                t.equal(opt.shortopt, '-h', get_notice(t, 'short opt help'));
+            } else {
+                t.ok(optnames.indexOf(opt.optdest) >= 0, get_notice(t, util.format('optdest [%s]', opt.optdest)));
+                t.equal(opt.longopt, util.format('-%s', opt.optdest), get_notice(t, util.format('optlong [%s]', opt.longopt)));
+            }
+        }
+    }
+    t.end();
+});
