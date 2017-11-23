@@ -1690,3 +1690,119 @@ test('A052', function (t) {
         });
     });
 });
+
+test('A053', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "$port|p" : {                "value" : 3000,                "type" : "int",                "nargs" : 1 ,                 "helpinfo" : "port to connect"            },            "dep" : {                "list|l" : [],                "string|s" : "s_var",                "$" : "+"            },            "rdep" : {                "list|l" : [],                "string|s" : "s_rdep",                "$" : "+"            }        }`;
+    var options;
+    var optionstr = `        {            "cmdprefixadded" : false        }`;
+    var parser;
+    var sio;
+    var sarr;
+    var helpexpr;
+    var jsonexpr;
+    var stringexpr;
+    var listexpr;
+    var helpfind;
+    var jsonfind;
+    var stringfind;
+    var listfind;
+    var idx;
+    var args;
+    var depstrval;
+    var depliststr;
+
+    setup_before(t);
+    write_file_callback('parseXXXXXX.json', '{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring","port":6000,"verbose":3}\n', t, 'jsonfile', function (jsonfile) {
+        write_file_callback('parseXXXXXX.json', '{"list":["depjson1","depjson2"]}\n', t, 'depjsonfile', function (depjsonfile) {
+            depstrval = 'newval';
+            depliststr = '["depenv1","depenv2"]';
+            renew_variable('EXTARGSPARSE_JSON', jsonfile);
+            renew_variable('DEP_JSON', depjsonfile);
+            options = extargsparse.ExtArgsOption(optionstr);
+            options.priority = [extargsparse.ENV_COMMAND_JSON_SET, extargsparse.ENVIRONMENT_SET, extargsparse.ENV_SUB_COMMAND_JSON_SET];
+            parser = extargsparse.ExtArgsParse(options);
+            parser.load_command_line_string(commandline);
+            renew_variable('DEP_STRING', depstrval);
+            renew_variable('DEP_LIST', depliststr);
+
+            sio = new StringIO();
+            parser.print_help(sio, 'dep');
+            sarr = split_strings(sio.getvalue());
+            helpexpr = new RegExp('^\\s+--help.*');
+            jsonexpr = new RegExp('^\\s+--dep-json.*');
+            listexpr = new RegExp('^\\s+--list.*');
+            stringexpr = new RegExp('^\\s+--string.*');
+
+            helpfind = 0;
+            jsonfind = 0;
+            stringfind = 0;
+            listfind = 0;
+            for (idx = 0; idx < sarr.length; idx += 1) {
+                if (helpexpr.test(sarr[idx])) {
+                    helpfind = 1;
+                }
+                if (jsonexpr.test(sarr[idx])) {
+                    jsonfind = 1;
+                }
+
+                if (stringexpr.test(sarr[idx])) {
+                    stringfind = 1;
+                }
+                if (listexpr.test(sarr[idx])) {
+                    listfind = 1;
+                }
+            }
+            t.equal(helpfind, 1, get_notice(t, 'help option'));
+            t.equal(jsonfind, 1, get_notice(t, 'json option'));
+            t.equal(listfind, 1, get_notice(t, 'list option'));
+            t.equal(stringfind, 1, get_notice(t, 'string option'));
+
+            sio = new StringIO();
+            parser.print_help(sio, 'rdep');
+            sarr = split_strings(sio.getvalue());
+            helpexpr = new RegExp('^\\s+--help.*');
+            jsonexpr = new RegExp('^\\s+--rdep-json.*');
+            listexpr = new RegExp('^\\s+--list.*');
+            stringexpr = new RegExp('^\\s+--string.*');
+
+            helpfind = 0;
+            jsonfind = 0;
+            stringfind = 0;
+            listfind = 0;
+            for (idx = 0; idx < sarr.length; idx += 1) {
+                if (helpexpr.test(sarr[idx])) {
+                    helpfind = 1;
+                }
+                if (jsonexpr.test(sarr[idx])) {
+                    jsonfind = 1;
+                }
+
+                if (stringexpr.test(sarr[idx])) {
+                    stringfind = 1;
+                }
+                if (listexpr.test(sarr[idx])) {
+                    listfind = 1;
+                }
+            }
+            t.equal(helpfind, 1, get_notice(t, 'help option'));
+            t.equal(jsonfind, 1, get_notice(t, 'json option'));
+            t.equal(listfind, 1, get_notice(t, 'list option'));
+            t.equal(stringfind, 1, get_notice(t, 'string option'));
+
+
+            args = parser.parse_command_line(['-p', '9000', 'dep', '--string', 'ee', 'ww']);
+            t.equal(args.verbose, 3, get_notice(t, 'verbose 3'));
+            t.equal(args.port, 9000, get_notice(t, 'port 9000'));
+            t.equal(args.subcommand, 'dep', get_notice(t, 'subcommand dep'));
+            t.deepEqual(args.list, ["jsonval1", "jsonval2"], get_notice(t, 'dep_list [jsonval1,jsonval2]'));
+            t.equal(args.string, 'ee', get_notice(t, 'dep_string ee'));
+            t.deepEqual(args.subnargs, ['ww'], get_notice(t, 'subnargs [ww]'));
+            unlink_file_callback(depjsonfile, 'depjsonfile', t, function () {
+                unlink_file_callback(jsonfile, 'jsonfile', t, function () {
+                    t.end();
+                });
+            });
+        });
+    });
+});
