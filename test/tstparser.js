@@ -1485,7 +1485,7 @@ test('A047', function (t) {
     });
 });
 
-test('A047', function (t) {
+test('A048', function (t) {
     'use strict';
     var commandline = `        {            "verbose|v" : "+",            "$port|p" : {                "value" : 3000,                "type" : "int",                "nargs" : 1 ,                 "helpinfo" : "port to connect"            },            "dep" : {                "list|l" : [],                "string|s" : "s_var",                "$" : "+"            }        }`;
     var options;
@@ -1523,4 +1523,45 @@ test('A047', function (t) {
         });
     });
 
+});
+
+test('A049', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v##very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long very long##" : "+",            "$port|p"  : {                "value" : 3000,                "type" : "int",                "nargs" : 1 ,                 "helpinfo" : "port to connect"            },            "dep" : {                "list|l" : [],                "string|s" : "s_var",                "$" : "+"            }        }`;
+    var options;
+    var parser;
+    var sio;
+    var sarr;
+    var overlength;
+    var idx;
+    setup_before(t);
+    options = extargsparse.ExtArgsOption();
+    options.screenwidth = 60;
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    sio = new StringIO();
+    parser.print_help(sio);
+    sarr = split_strings(sio.getvalue());
+    overlength = 0;
+    for (idx = 0; idx < sarr.length; idx += 1) {
+        if (sarr[idx].length > 65) {
+            overlength = 1;
+        }
+    }
+    t.equal(overlength, 0, get_notice(t, 'overlength 0'));
+    options = extargsparse.ExtArgsOption();
+    options.screenwidth = 80;
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    sio = new StringIO();
+    parser.print_help(sio);
+    sarr = split_strings(sio.getvalue());
+    overlength = 0;
+    for (idx = 0; idx < sarr.length; idx += 1) {
+        if (sarr[idx].length > 65) {
+            overlength = 1;
+        }
+    }
+    t.equal(overlength, 1, get_notice(t, 'overlength 1'));
+    t.end();
 });
