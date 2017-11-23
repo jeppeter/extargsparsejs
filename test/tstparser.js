@@ -1598,7 +1598,7 @@ test('A050', function (t) {
     t.end();
 });
 
-test('A050', function (t) {
+test('A051', function (t) {
     'use strict';
     var commandline = `        {            "verbose|v" : "+",            "dep" : {                "list|l" : [],                "string|s" : "s_var",                "$" : "+"            }        }`;
     var options;
