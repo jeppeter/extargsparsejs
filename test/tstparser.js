@@ -1084,3 +1084,22 @@ test('A033', function (t) {
     }
     t.end();
 });
+
+test('A034', function (t) {
+    'use strict';
+    var commandline = `        {            "dep" : {                "string|S" : "stringval"            }        }`;
+    setup_before(t);
+    write_file_callback('parseXXXXXX.json', '{"dep_string":null}', t, 'depjsonfile', function (depjsonfile) {
+        var parser;
+        var args;
+        parser = extargsparse.ExtArgsParse();
+        parser.load_command_line_string(commandline);
+        args = parser.parse_command_line(['--json', depjsonfile, 'dep']);
+        t.equal(args.dep_string, null, get_notice(t, 'dep_string null'));
+        t.equal(args.subcommand, 'dep', get_notice(t, 'subcommand dep'));
+        t.deepEqual(args.subnargs, [], get_notice(t, 'subnargs []'));
+        unlink_file_callback(depjsonfile, 'depjsonfile', t, function () {
+            t.end();
+        });
+    });
+});

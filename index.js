@@ -1942,14 +1942,18 @@ function ExtArgsParse(option) {
     innerself.inner_load_jsonvalue = function (args, prefix, jsonvalue) {
         var k;
         var idx;
-        var keys = Object.keys(jsonvalue);
+        var keys = [];
         var newprefix;
         var newkey;
+        if (not_null(jsonvalue)) {
+            keys = Object.keys(jsonvalue);
+        }
+
         self.info(util.format('prefix [%s] jsonvalue [%s]', prefix, self.format_string(jsonvalue)));
         if (Array.isArray(jsonvalue)) {
             newkey = prefix;
             args = innerself.inner_set_jsonvalue_not_defined(args, innerself.maincmd, newkey, jsonvalue);
-        } else {
+        } else if (not_null(jsonvalue)) {
             for (idx = 0; idx < keys.length; idx += 1) {
                 k = keys[idx];
                 if (typeof jsonvalue[k] === 'object') {
@@ -1969,6 +1973,8 @@ function ExtArgsParse(option) {
                     args = innerself.inner_set_jsonvalue_not_defined(args, innerself.maincmd, newkey, jsonvalue[k]);
                 }
             }
+        } else if (jsonvalue === null) {
+            args = innerself.inner_set_jsonvalue_not_defined(args, innerself.maincmd, prefix, jsonvalue);
         }
         return args;
     };
@@ -1997,7 +2003,7 @@ function ExtArgsParse(option) {
         } catch (e3) {
             self.error_msg(util.format('can not parse (%s)\n%s', jsonfile, innerself.inner_get_except_info(e3)));
         }
-        self.info(util.format('load (%s) prefix(%s) value (%s)', jsonfile, prefix, jsonvalue));
+        self.info(util.format('load (%s) prefix(%s) value (%s)', jsonfile, prefix, self.format_string(jsonvalue)));
         return innerself.inner_load_jsonvalue(args, prefix, jsonvalue);
     };
 
