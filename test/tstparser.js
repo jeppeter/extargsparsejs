@@ -1597,3 +1597,32 @@ test('A050', function (t) {
     t.equal(matched, 1, get_notice(t, 'matched 1'));
     t.end();
 });
+
+test('A050', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "dep" : {                "list|l" : [],                "string|s" : "s_var",                "$" : "+"            }        }`;
+    var options;
+    var optionstr = `        {            "helplong" : "usage",            "helpshort" : null,            "longprefix" : "++",            "shortprefix" : "+"        }`;
+    var parser;
+    var sio;
+    var sarr;
+    var matchexpr;
+    var matched;
+    var idx;
+    setup_before(t);
+    options = extargsparse.ExtArgsOption(optionstr);
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+    sio = new StringIO();
+    parser.print_help(sio);
+    sarr = split_strings(sio.getvalue());
+    matchexpr = new RegExp('^\\s+\\+\\+usage\\s+to display.*');
+    matched = 0;
+    for (idx = 0; idx < sarr.length; idx += 1) {
+        if (matchexpr.test(sarr[idx])) {
+            matched = 1;
+        }
+    }
+    t.equal(matched, 1, get_notice(t, 'matched 1'));
+    t.end();
+});
