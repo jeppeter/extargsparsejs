@@ -1147,7 +1147,7 @@ test('A035', function (t) {
     });
 });
 
-test('A036', function (t) {
+test('A037', function (t) {
     'use strict';
     var commandline = `        {            "jsoninput|j##input json default stdin##" : null,            "input|i##input file to get default nothing - for stdin##" : null,            "output|o##output c file##" : null,            "verbose|v##verbose mode default(0)##" : "+",            "cmdpattern|c" : "%EXTARGS_CMDSTRUCT%",            "optpattern|O" : "%EXTARGS_STRUCT%",             "structname|s" : "args_options_t",            "funcname|F" : "debug_extargs_output",            "releasename|R" : "release_extargs_output",            "funcpattern" : "%EXTARGS_DEBUGFUNC%",            "prefix|p" : "",            "test" : {                "$" : 0            },            "optstruct" : {                "$" : 0            },            "cmdstruct" : {                "$" : 0            },            "debugfunc" : {                "$" : 0            },            "all" : {                "$" : 0            }        }`;
     var parser;
@@ -1168,5 +1168,26 @@ test('A036', function (t) {
     t.equal(cmdopts[2].optdest, 'funcname', get_notice(t, '[2].optdest funcname'));
     t.equal(cmdopts[3].varname, 'funcpattern', get_notice(t, '[3].varname funcpattern'));
     t.equal(cmdopts[4].typename, 'help', get_notice(t, '[4].typename help'));
+    t.end();
+});
+
+test('A038', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "kernel|K" : "/boot/",            "initrd|I" : "/boot/",            "encryptfile|e" : null,            "encryptkey|E" : null,            "setupsectsoffset" : 0x1f1,            "ipxe<ipxe_handler>" : {                "$" : "+"            }        }`;
+    var parser;
+    var options;
+    var e2;
+    var ok = false;
+    options = extargsparse.ExtArgsOption();
+    options.errorhandler = 'raise';
+    parser = extargsparse.ExtArgsParse(options);
+    try {
+        parser.load_command_line_string(commandline);
+    } catch (e) {
+        e2 = e;
+        e2 = e2;
+        ok = true;
+    }
+    t.equal(ok, true, get_notice(t, 'parse ok'));
     t.end();
 });
