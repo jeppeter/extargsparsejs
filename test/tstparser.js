@@ -1191,3 +1191,19 @@ test('A038', function (t) {
     t.equal(ok, true, get_notice(t, 'parse ok'));
     t.end();
 });
+
+test('A039', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "kernel|K" : "/boot/",            "initrd|I" : "/boot/",            "encryptfile|e" : null,            "encryptkey|E" : null,            "setupsectsoffset" : 451        }`;
+    var parser;
+    var args;
+    setup_before(t);
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    renew_variable('EXTARGS_VERBOSE', '4');
+    renew_variable('EXTARGS_SETUPSECTSOFFSET', '0x612');
+    args = parser.parse_command_line([]);
+    t.equal(args.verbose, 4, get_notice(t, 'verbose 4'));
+    t.equal(args.setupsectsoffset, 0x612, get_notice(t, 'setupsectsoffset 0x612'));
+    t.end();
+});
