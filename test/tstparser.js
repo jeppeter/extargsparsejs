@@ -1103,3 +1103,46 @@ test('A034', function (t) {
         });
     });
 });
+
+test('A035', function (t) {
+    'use strict';
+    var commandline = `        {            "float1|f" : 3.633 ,            "float2" : 6422.22,            "float3" : 44463.23,            "verbose|v" : "+",            "dep" : {                "float3" : 3332.233            },            "rdep" : {                "ip"  :{                    "float4" : 3377.33,                    "float6" : 33.22,                    "float7" : 0.333                }            }        }`;
+    setup_before(t);
+    write_file_callback('parseXXXXXX.json', '{"float3":33.221}', t, 'depjsonfile', function (depjsonfile) {
+        write_file_callback('parseXXXXXX.json', '{"ip" : { "float4" : 40.3}}', t, 'rdepjsonfile', function (rdepjsonfile) {
+            write_file_callback('parseXXXXXX.json', '{"verbose": 30,"float3": 77.1}', t, 'jsonfile', function (jsonfile) {
+                write_file_callback('parseXXXXXX.json', '{"float7" : 11.22,"float4" : 779.2}', t, 'rdepipjsonfile', function (rdepipjsonfile) {
+                    var parser;
+                    var args;
+                    renew_variable('EXTARGSPARSE_JSON', jsonfile);
+                    renew_variable('DEP_JSON', depjsonfile);
+                    renew_variable('RDEP_JSON', rdepjsonfile);
+                    renew_variable('DEP_FLOAT3', '33.52');
+                    renew_variable('RDEP_IP_FLOAT7', '99.3');
+                    parser = extargsparse.ExtArgsParse();
+                    parser.load_command_line_string(commandline);
+                    args = parser.parse_command_line(['-vvfvv', '33.21', 'rdep', 'ip', '--json', jsonfile, '--rdep-ip-json', rdepipjsonfile]);
+                    t.equal(args.subnargs.length, 0, get_notice(t, 'subnargs []'));
+                    t.equal(args.subcommand, 'rdep.ip', get_notice(t, 'subcommand rdep.ip'));
+                    t.equal(args.verbose, 4, get_notice(t, 'verbose 4'));
+                    t.equal(args.float1, 33.21, get_notice(t, 'float1 33.21'));
+                    t.equal(args.dep_float3, 33.52, get_notice(t, 'dep_float3 33.52'));
+                    t.equal(args.float2, 6422.22, get_notice(t, 'float2 6422.22'));
+                    t.equal(args.float3, 77.1, get_notice(t, 'float3 77.1'));
+                    t.equal(args.rdep_ip_float4, 779.2, get_notice(t, 'rdep_ip_float4 779.2'));
+                    t.equal(args.rdep_ip_float6, 33.22, get_notice(t, 'rdep_ip_float6 33.22'));
+                    t.equal(args.rdep_ip_float7, 11.22, get_notice(t, 'rdep_ip_float7 11.22'));
+                    unlink_file_callback(jsonfile, 'jsonfile', t, function () {
+                        unlink_file_callback(rdepipjsonfile, 'rdepipjsonfile', t, function () {
+                            unlink_file_callback(rdepjsonfile, 'rdepjsonfile', t, function () {
+                                unlink_file_callback(depjsonfile, 'depjsonfile', t, function () {
+                                    t.end();
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
