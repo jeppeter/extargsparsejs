@@ -1226,3 +1226,26 @@ test('A040', function (t) {
     t.equal(tcebase.tce_timeout, 10, get_notice(t, 'tce_timeout'));
     t.end();
 });
+
+
+test('A041', function (t) {
+    'use strict';
+    var commandline_fmt = `        {            "countryname|N" : "CN",            "statename|S" : "ZJ",            "localityname" : "HZ",            "organizationname|O" : ["BT"],            "organizationunitname" : "BT R&D",            "commonname|C" : "bingte.com",            "+ssl" : {                "chain" : true,                "dir" : "%s",                "bits" : 4096,                "md" : "sha256",                "utf8" : true,                "name" : "ipxe",                "days" : 3650,                "crl-days": 365,                "emailaddress" : "bt@bingte.com",                "aia_url" : "http://bingte.com/sec/aia",                "crl_url" : "http://bingte.com/sec/crl",                "ocsp_url" : "http://bingte.com/sec/ocsp",                "dns_url" : ["bingte.com"],                "excluded_ip" : ["0.0.0.0/0.0.0.0","0:0:0:0:0:0:0:0/0:0:0:0:0:0:0:0"],                "password|P" : null,                "copy_extensions" : "none",                "subca" : false,                "comment": ""            }        }`;
+    var parser;
+    var args;
+    var curdir = path.resolve(__dirname);
+    var commandline;
+    curdir = curdir.replace(/\\/, '\\\\');
+    commandline = util.format(commandline_fmt, curdir);
+    setup_before(t);
+    write_file_callback('parseXXXXXX.json', '{"emailaddress" : "unit@bingte.com","organizationname" : "BT RD","ssl" :{ "dir" : "./certs/bingte","name" : "bingte","subca" : true,"copy_extensions" : "copy","days" : 375,"crl_days" : 30,"bits" : 4096}}', t, 'jsonfile', function (jsonfile) {
+        parser = extargsparse.ExtArgsParse();
+        parser.load_command_line_string(commandline);
+        args = parser.parse_command_line(['--json', jsonfile], parser);
+        t.equal(args.organizationname.length, 1, get_notice(t, 'organizationname length 1'));
+        t.equal(args.organizationname[0], 'BT', get_notice(t, 'organizationname[0] BT'));
+        unlink_file_callback(jsonfile, 'jsonfile', t, function () {
+            t.end();
+        });
+    });
+});
