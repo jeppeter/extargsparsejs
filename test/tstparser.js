@@ -1249,3 +1249,18 @@ test('A041', function (t) {
         });
     });
 });
+
+
+test('A042', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "kernel|K" : "/boot/",            "initrd|I" : "/boot/",            "encryptfile|e" : null,            "encryptkey|E" : null,            "setupsectsoffset" : 663,            "ipxe" : {                "$" : "+"            }        }`;
+    var parser;
+    var args;
+    setup_before(t);
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    args = parser.parse_command_line(['-vvvK', 'kernel', '--initrd', 'initrd', 'cc', 'dd', '-E', 'encryptkey', '-e', 'encryptfile', 'ipxe']);
+    t.equal(args.subcommand, 'ipxe', get_notice(t, 'subcommand ipxe'));
+    t.deepEqual(args.subnargs, ['cc', 'dd'], get_notice(t, 'subnargs [cc,dd]'));
+    t.end();
+});
