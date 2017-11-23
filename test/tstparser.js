@@ -1484,3 +1484,43 @@ test('A047', function (t) {
         });
     });
 });
+
+test('A047', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "$port|p" : {                "value" : 3000,                "type" : "int",                "nargs" : 1 ,                 "helpinfo" : "port to connect"            },            "dep" : {                "list|l" : [],                "string|s" : "s_var",                "$" : "+"            }        }`;
+    var options;
+    var parser;
+    var depstrval;
+    var depliststr;
+    var args;
+    depstrval = 'newval';
+    depliststr = '["depenv1","depenv2"]';
+    setup_before(t);
+    write_file_callback('parseXXXXXX.json', '{"dep":{"list" : ["jsonval1","jsonval2"],"string" : "jsonstring"},"port":6000,"verbose":3}\n', t, 'jsonfile', function (jsonfile) {
+        write_file_callback('parseXXXXXX.json', '{"list":["depjson1","depjson2"]}\n', t, 'depjsonfile', function (depjsonfile) {
+            renew_variable('EXTARGSPARSE_JSONFILE', jsonfile);
+            renew_variable('DEP_JSONFILE', depjsonfile);
+            options = extargsparse.ExtArgsOption();
+            options.jsonlong = 'jsonfile';
+            options.priority = [extargsparse.ENV_COMMAND_JSON_SET, extargsparse.ENVIRONMENT_SET, extargsparse.ENV_SUB_COMMAND_JSON_SET];
+            parser = extargsparse.ExtArgsParse(options);
+            parser.load_command_line_string(commandline);
+            renew_variable('DEP_STRING', depstrval);
+            renew_variable('DEP_LIST', depliststr);
+
+            args = parser.parse_command_line(['-p', '9000', 'dep', '--dep-string', 'ee', 'ww']);
+            t.equal(args.verbose, 3, get_notice(t, 'verbose 3'));
+            t.equal(args.port, 9000, get_notice(t, 'port 9000'));
+            t.equal(args.subcommand, 'dep', get_notice(t, 'subcommand dep'));
+            t.deepEqual(args.dep_list, ['jsonval1', 'jsonval2'], get_notice(t, 'dep_list [jsonval1,jsonval2]'));
+            t.equal(args.dep_string, 'ee', get_notice(t, 'dep_string ee'));
+            t.deepEqual(args.subnargs, ['ww'], get_notice(t, 'subnargs [ww]'));
+            unlink_file_callback(depjsonfile, 'depjsonfile', t, function () {
+                unlink_file_callback(jsonfile, 'jsonfile', t, function () {
+                    t.end();
+                });
+            });
+        });
+    });
+
+});
