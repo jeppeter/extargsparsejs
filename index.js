@@ -1889,6 +1889,7 @@ function ExtArgsParse(option) {
         }
         var s;
         var paths;
+        innerself.inner_set_command_line_self_args();
         paths = innerself.inner_find_commands_in_path(cmdname);
 
         s = innerself.inner_print_help(paths);

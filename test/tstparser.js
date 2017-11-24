@@ -1577,6 +1577,7 @@ test('A049', function (t) {
     var idx;
     setup_before(t);
     options = extargsparse.ExtArgsOption();
+    options.usage = 'new usage';
     options.screenwidth = 60;
     parser = extargsparse.ExtArgsParse(options);
     parser.load_command_line_string(commandline);
@@ -2000,5 +2001,23 @@ test('A057', function (t) {
             }
         }
     }
+    t.end();
+});
+
+test('A058', function (t) {
+    'use strict';
+    var commandline = `        {            "verbose" : "+",            "dep" : {                "$" : "*"            },            "rdep" : {                "$" : "*"            }        }`;
+    var parser;
+    var sio;
+    var sarr;
+    var matchexpr;
+
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+    sio = new StringIO();
+    parser.print_help(sio);
+    sarr = split_strings(sio.getvalue());
+    matchexpr = new RegExp('.*\\[OPTIONS\\]\\s+\\[SUBCOMMANDS\\]\\s+.*');
+    t.ok(matchexpr.test(sarr[0]), get_notice(t, 'match .*\\[OPTIONS\\]\\s+\\[SUBCOMMANDS\\]\\s+.*'));
     t.end();
 });
