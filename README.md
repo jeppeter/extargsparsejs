@@ -223,6 +223,315 @@ subnargs = cc,dd
 context["base"] = basenum
 ```
 
+### with extension flag example
+
+```js
+var extargsparse = require('extargsparse');
+
+var commandline = `
+{
+    "verbose|v" : "+",
+    "port|p+http" : 3000,
+    "dep<dep_handler>" : {
+        "list|l" : [],
+        "string|s" : "s_var",
+        "$" : "+"
+    }
+}
+`;
+var dep_handler = function (args) {
+    'use strict';
+    console.log('verbose = %d', args.verbose);
+    console.log('port = %s', args.http_port);
+    console.log('subcommand = %s', args.subcommand);
+    console.log('list = %s', args.dep_list);
+    console.log('string = %s', args.dep_string);
+    console.log('subnargs = %s', args.subnargs);
+    process.exit(0);
+    return;
+};
+
+exports.dep_handler = dep_handler;
+var options;
+var parser;
+options = extargsparse.ExtArgsOption();
+options.usage = ' sample commandline parser ';
+parser = extargsparse.ExtArgsParse(options);
+parser.load_command_line_string(commandline);
+parser.parse_command_line(['-vvvv', '-p', '5000', 'dep', '-l', 'arg1', '-l', 'arg2', 'cc', 'dd']);
+```
+> run command
+```shell
+node extension.js
+```
+
+> output
+```shell
+verbose = 4
+port = 5000
+subcommand = dep
+list = arg1,arg2
+string = s_var
+subnargs = cc,dd
+```
+
+### with extension flag bundle example
+```js
+var extargsparse = require('extargsparse');
+var commandline = `
+{
+    "verbose|v" : "+",
+    "+http" : {
+        "port|p" : 3000,
+        "visual_mode|V" : false
+    },
+    "dep<dep_handler>" : {
+        "list|l" : [],
+        "string|s" : "s_var",
+        "$" : "+"
+    }
+}
+`;
+
+var dep_handler = function (args) {
+    'use strict';
+    console.log('verbose = %d', args.verbose);
+    console.log('port = %s', args.http_port);
+    console.log('visual_mode = %s', args.http_visual_mode);
+    console.log('subcommand = %s', args.subcommand);
+    console.log('list = %s', args.dep_list);
+    console.log('string = %s', args.dep_string);
+    console.log('subnargs = %s', args.subnargs);
+    process.exit(0);
+    return;
+};
+
+exports.dep_handler = dep_handler;
+var options;
+var parser;
+options = extargsparse.ExtArgsOption();
+options.usage = ' sample commandline parser ';
+parser = extargsparse.ExtArgsParse(options);
+parser.load_command_line_string(commandline);
+parser.parse_command_line(['-vvvv', '-p', '5000', '--http-visual-mode', 'dep', '-l', 'arg1', '--dep-list', 'arg2', 'cc', 'dd']);
+```
+
+> run command
+```shell
+node extensionbundle.js
+```
+
+> output
+```js
+verbose = 4
+port = 5000
+visual_mode = true
+subcommand = dep
+list = arg1,arg2
+string = s_var
+subnargs = cc,dd
+```
+
+### with complex flag set
+
+```js
+var extargsparse = require('extargsparse');
+var commandline = `
+{
+    "verbose|v" : "+",
+    "$port|p" : {
+        "value" : 3000,
+        "type" : "int",
+        "nargs" : 1 , 
+        "helpinfo" : "port to connect"
+    },
+    "dep<dep_handler>" : {
+        "list|l" : [],
+        "string|s" : "s_var",
+        "$" : "+"
+    }
+}
+`;
+
+var dep_handler = function (args) {
+    'use strict';
+    console.log('verbose = %d', args.verbose);
+    console.log('port = %s', args.http_port);
+    console.log('subcommand = %s', args.subcommand);
+    console.log('list = %s', args.dep_list);
+    console.log('string = %s', args.dep_string);
+    console.log('subnargs = %s', args.subnargs);
+    process.exit(0);
+    return;
+};
+
+exports.dep_handler = dep_handler;
+var options;
+var parser;
+options = extargsparse.ExtArgsOption();
+options.usage = ' sample commandline parser ';
+parser = extargsparse.ExtArgsParse(options);
+parser.load_command_line_string(commandline);
+parser.parse_command_line(['-vvvv', '-p', '5000', 'dep', '-l', 'arg1', '-l', 'arg2', 'cc', 'dd']);
+```
+
+> run command
+```shell
+node complexflag.js
+```
+
+> output
+```shell
+verbose = 4
+port = undefined
+subcommand = dep
+list = arg1,arg2
+string = s_var
+subnargs = cc,dd
+```
+
+### extension for help and long opt
+```js
+var extargsparse = require('extargsparse');
+var util = require('util');
+
+var commandline = `
+  {
+    "verbose|v" : "+",
+    "pair|p!optparse=pair_parse;opthelp=pair_help!" : [],
+    "even|e!jsonfunc=single_2_jsonfunc!" : [],
+    "clr_CA_name" : null,
+    "$" : "*"
+  }
+`;
+
+var pair_parse = function (args, validx, keycls, params) {
+    'use strict';
+    var val;
+    if ((validx + 1) >= params.length) {
+        throw new Error(util.format('need 2 args for [++pair|+p]'));
+    }
+    val = args[keycls.optdest];
+    if (val === undefined || val === null) {
+        val = [];
+    }
+    val.push(params[validx]);
+    val.push(params[(validx + 1)]);
+    args[keycls.optdest] = val;
+    return 2;
+};
+exports.pair_parse = pair_parse;
+
+var pair_help = function (keycls) {
+    'use strict';
+    keycls = keycls;
+    return '[first] [second]';
+};
+
+exports.pair_help = pair_help;
+
+var single_2_jsonfunc = function (args, keycls, value) {
+    'use strict';
+    var setvalue;
+    var idx;
+    if (!Array.isArray(value)) {
+        throw new Error(util.format('not list value'));
+    }
+    setvalue = [];
+    idx = 0;
+    while (idx < value.length) {
+        setvalue.push(value[idx]);
+        idx += 2;
+    }
+    args[keycls.optdest] = setvalue;
+    return;
+};
+
+exports.single_2_jsonfunc = single_2_jsonfunc;
+
+var options;
+var parser;
+var args;
+options = extargsparse.ExtArgsOption();
+options.longprefix = '++';
+options.shortprefix = '+';
+options.jsonlong = 'jsonfile';
+options.helplong = 'usage';
+options.helpshort = '?';
+options.flagnochange = true;
+parser = extargsparse.ExtArgsParse(options);
+parser.load_command_line_string(commandline);
+args = parser.parse_command_line();
+console.log('verbose [%d]', args.verbose);
+console.log('pair (%s)', args.pair);
+console.log('args (%s)', args.args);
+console.log('clr_CA_name (%s)', args.clr_CA_name);
+console.log('event (%s)', args.even);
+```
+
+> run help
+```shell
+node opthandle.js +?
+```
+
+> output
+```shell
+extopthelp.js  [OPTIONS] [args...]
+
+[OPTIONS]
+    ++jsonfile     jsonfile     json input file to get the value set
+    ++usage|+?                  to display this help information
+    ++verbose|+v   verbose      verbose inc
+    ++pair|+p      pair         [first] [second]
+    ++even|+e      even         even set default()
+    ++clr_CA_name  clr_CA_name  clr_CA_name set default(null)
+
+```
+
+
+> cc.json file
+```json
+{
+    "even": ["good", "bad"]
+}
+```
+
+```shell
+node opthandle.js ++jsonfile cc.json ++pair cc ss rr +vvvv
+```
+
+> output
+```shell
+verbose [4]
+pair (cc,ss)
+args (rr)
+clr_CA_name (null)
+event (good)
+```
+
+###  extension attribute 
+
+* opthelp 
+ **   help format information string format like pair_help(keycls) keycls is the parse object to handle ,it can be 
+
+* optparse
+ **   parse function for opt 
+     like
+     def parse_opt(args,validx,keycls,params):
+   *** args is the return value from the parse_command_line
+       validx is the value index in the params
+       keycls is the option object you can use optdest for the destination
+       params is the command line all in
+* jsonfunc
+  ** json value set function for opt
+     like
+     def json_opt(args,keycls,value):
+  ** args is the return value from the parse_command_line
+     keycls is the options object you can use optdest for destination
+     value is the value of json
+
+### extension get example     
+
 # Rule
 ### init function extargsparse.ExtArgsParse(opt)
   *  options just have a priority if not set for the value set after command line parse value can be
