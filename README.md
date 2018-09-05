@@ -2,6 +2,7 @@
 > _a extensible json directive command line libraries_
 
 ### Release History
+* Sep 5th 2018 Release 1.0.2 to make usage ok in user define helpinfo
 * Nov 24th 2017 Release 1.0.0 
 
 ### a simple example

@@ -390,6 +390,9 @@ function ParserCompat(keycls, opt) {
         self.epilog = null;
         self.description = null;
         self.prog = null;
+        if (not_null(opt) && not_null(opt.prog)) {
+            self.prog = opt.prog;
+        }
         self.usage = null;
         self.version = null;
         return self;
@@ -516,6 +519,7 @@ function ParserCompat(keycls, opt) {
         var curstr;
         var idx;
         var curopt;
+        var curcmd;
         if (!not_null(helpsize)) {
             helpsize = null;
         }
@@ -527,11 +531,12 @@ function ParserCompat(keycls, opt) {
             helpsize = self.get_help_size();
         }
 
-        if (not_null(self.usage) && self.usage.length > 0) {
+        if ( parentcmds.length == 0 && not_null(self.usage) && self.usage.length > 0) {
             self.info(util.format('usage [%s]', self.usage));
             retstr += self.usage;
         } else {
             rootcmds = self;
+            curcmd = self;
             if (parentcmds.length > 0) {
                 rootcmds = parentcmds[0];
             }
@@ -548,34 +553,37 @@ function ParserCompat(keycls, opt) {
             }
 
             retstr += util.format(' %s', self.cmdname);
+            if (not_null(curcmd.helpinfo)) {
+                retstr += util.format(' %s',curcmd.helpinfo);
+            } else {
+                if (self.cmdopts.length > 0) {
+                    retstr += util.format(' [OPTIONS]');
+                }
 
-            if (self.cmdopts.length > 0) {
-                retstr += util.format(' [OPTIONS]');
-            }
+                if (self.subcommands.length > 0) {
+                    retstr += util.format(' [SUBCOMMANDS]');
+                }
 
-            if (self.subcommands.length > 0) {
-                retstr += util.format(' [SUBCOMMANDS]');
-            }
-
-            for (idx = 0; idx < self.cmdopts.length; idx += 1) {
-                curopt = self.cmdopts[idx];
-                if (curopt.flagname === '$') {
-                    if (curopt.nargs === '+') {
-                        retstr += util.format(' args...');
-                    } else if (curopt.nargs === '*') {
-                        retstr += util.format(' [args...]');
-                    } else if (curopt.nargs === '?') {
-                        retstr += util.format(' arg');
-                    } else {
-                        if (curopt.nargs > 1) {
-                            retstr += ' args...';
-                        } else if (curopt === 1) {
-                            retstr += ' arg';
+                for (idx = 0; idx < self.cmdopts.length; idx += 1) {
+                    curopt = self.cmdopts[idx];
+                    if (curopt.flagname === '$') {
+                        if (curopt.nargs === '+') {
+                            retstr += util.format(' args...');
+                        } else if (curopt.nargs === '*') {
+                            retstr += util.format(' [args...]');
+                        } else if (curopt.nargs === '?') {
+                            retstr += util.format(' arg');
                         } else {
-                            retstr += '';
+                            if (curopt.nargs > 1) {
+                                retstr += ' args...';
+                            } else if (curopt === 1) {
+                                retstr += ' arg';
+                            } else {
+                                retstr += '';
+                            }
                         }
                     }
-                }
+                }                
             }
             retstr += '\n';
         }

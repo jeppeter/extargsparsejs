@@ -360,7 +360,24 @@ var debug_set_2_args = function (args, validx, keycls, params) {
     return 2;
 };
 
+var Debug_set_2_args = function(args, validx, keycls, params) {
+    'use strict';
+    var arr;
+    if ((validx + 2) > params.length) {
+        throw new Error('need 2 args');
+    }
+    arr = args[keycls.optdest];
+    if (arr === undefined || arr === null) {
+        arr = [];
+    }
+    arr.push(params[validx].toUpperCase());
+    arr.push(params[(validx + 1)].toUpperCase());
+    args[keycls.optdest] = arr;
+    return 2;
+};
+
 exports.debug_set_2_args = debug_set_2_args;
+exports.Debug_set_2_args = Debug_set_2_args;
 
 var debug_opthelp_set = function (keycls) {
     'use strict';
@@ -410,6 +427,27 @@ var debug_upper_jsonfunc = function (args, keycls, value) {
 };
 exports.debug_upper_jsonfunc = debug_upper_jsonfunc;
 
+
+var get_cmd_ok = function(sarr, cmdname) {
+    'use strict';
+    var exprstr = util.format('^\\s+\\[%s\\]\\s+.*',cmdname);
+    return assert_string_expr(sarr,exprstr);
+};
+
+var get_cmds_ok = function(t,parser,sarr, cmdname) {
+    'use strict';
+    var subcmds;
+    var idx;
+    var c;
+    var retval;
+    subcmds = parser.get_subcommands(cmdname);
+    for (idx=0;idx < subcmds.length;idx += 1) {
+        c = subcmds[idx];
+        retval = get_cmd_ok(sarr, c);
+        t.equal(retval, true, get_notice(t, util.format('get cmd [%s]', c)));
+    }
+    return;
+};
 
 test('A001', function (t) {
     'use strict';
@@ -2019,5 +2057,154 @@ test('A058', function (t) {
     sarr = split_strings(sio.getvalue());
     matchexpr = new RegExp('.*\\[OPTIONS\\]\\s+\\[SUBCOMMANDS\\]\\s+.*');
     t.ok(matchexpr.test(sarr[0]), get_notice(t, 'match .*\\[OPTIONS\\]\\s+\\[SUBCOMMANDS\\]\\s+.*'));
+    t.end();
+});
+
+test('A059', function(t) {
+    'use strict';
+    var commandline = `        {            "verbose|v" : "+",            "kernel|K" : "/boot/",            "initrd|I" : "/boot/",            "pair|P!optparse=Debug_set_2_args!" : [],            "encryptfile|e" : null,            "encryptkey|E" : null,            "setupsectsoffset" : 663,            "ipxe" : {                "$" : "+"            }        }    `;
+    var parser;
+    var options;
+    var args;
+
+    options = extargsparse.ExtArgsOption();
+    options.parseall = true;
+    options.longprefix = "++";
+    options.shortprefix = "+";
+    parser = extargsparse.ExtArgsParse(options);
+    parser.load_command_line_string(commandline);
+
+    args = parser.parse_command_line(['+K','kernel','++pair','initrd', 'cc', 'dd', '+E', 'encryptkey',
+            '+e' ,'encryptfile','ipxe'], null);
+    t.equal(args.subcommand, 'ipxe', get_notice(t,"subcommand"));
+    t.deepEqual(args.subnargs, ['dd'], get_notice(t, "subnargs"));
+    t.deepEqual(args.pair,['INITRD','CC']);
+    t.end();
+});
+
+test('A060', function(t) {
+    'use strict';
+    var commandline=`        {            "dep" : {                "$" : "*",                "ip" : {                    "$" : "*"                }            },            "rdep" : {                "$" : "*",                "ip" : {                    "$" : "*"                }            }        }    `;
+    var parser;
+    var sio;
+    var sarr ;
+
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+   
+    sio = new StringIO();
+    parser.print_help(sio);
+    sarr = split_strings(sio.getvalue());
+    get_cmds_ok(t,parser,sarr,"");
+
+    sio = new StringIO();
+    parser.print_help(sio,"dep");
+    sarr = split_strings(sio.getvalue());
+    get_cmds_ok(t,parser,sarr,"dep");
+
+
+    sio = new StringIO();
+    parser.print_help(sio,"rdep");
+    sarr = split_strings(sio.getvalue());
+    get_cmds_ok(t,parser,sarr,"rdep");
+
+    t.end();
+    return;
+});
+
+test('A061', function(t) {
+    'use strict';
+    var commandline=`        {            "dep##[cc]... dep handler used##" : {                "$" : "*",                "ip" : {                    "$" : "*"                }            },            "rdep##[dd]... rdep handler used##" : {                "$" : "*",                "ip" : {                    "$" : "*"                }            }        }    `;
+    var parser;
+    var sio;
+    var sarr ;
+    var expr ;
+    var m ;
+    var ok = false;
+
+    parser = extargsparse.ExtArgsParse();
+    parser.load_command_line_string(commandline);
+   
+    sio = new StringIO();
+    parser.print_help(sio,"dep");
+    sarr = split_strings(sio.getvalue());
+    expr = new RegExp('\\[cc\\]... dep handler used');
+    m = expr.exec(sarr[0]);
+    if (m !== null && m !== undefined) {
+        ok = true;
+    }
+    t.equal(ok , true, get_notice(t, 'get dep usage'));
+
+    sio = new StringIO();
+    parser.print_help(sio,"rdep");
+    sarr = split_strings(sio.getvalue());
+    expr = new RegExp('\\[dd\\]... rdep handler used');
+    m = expr.exec(sarr[0]);
+    if (m !== null && m !== undefined) {
+        ok = true;
+    }
+    t.equal(ok , true, get_notice(t, 'get rdep usage'));
+    t.end();
+});
+
+test('A062', function(t) {
+    'use strict';
+    var commandline=`
+            {
+            "dep##[cc]... dep handler used##" : {
+                "$" : "*",
+                "ip" : {
+                    "$" : "*"
+                }
+            },
+            "rdep##[dd]... rdep handler used##" : {
+                "$" : "*",
+                "ip" : {
+                    "$" : "*"
+                }
+            }
+        }
+    `;
+    var parser;
+    var sio;
+    var sarr ;
+    var expr ;
+    var m ;
+    var ok = false;
+    var opts;
+    var expr2 ;
+
+    opts = extargsparse.ExtArgsOption();
+    opts.prog = 'cmd1';
+    parser = extargsparse.ExtArgsParse(opts);
+    parser.load_command_line_string(commandline);
+   
+    sio = new StringIO();
+    parser.print_help(sio,"dep");
+    sarr = split_strings(sio.getvalue());
+    expr = new RegExp('\\[cc\\]... dep handler used');
+    expr2 = new RegExp('cmd1');
+    m = expr.exec(sarr[0]);
+    if (m !== null && m !== undefined) {
+        m = expr2.exec(sarr[0]);
+        if (m !== null && m !== undefined) {
+            ok = true;    
+        }        
+    }
+    t.equal(ok , true, get_notice(t, 'get dep usage'));
+
+    sio = new StringIO();
+    parser.print_help(sio,"rdep");
+    sarr = split_strings(sio.getvalue());
+    expr = new RegExp('\\[dd\\]... rdep handler used');
+    expr2 = new RegExp('cmd1');
+    m = expr.exec(sarr[0]);
+    if (m !== null && m !== undefined) {
+        m = expr2.exec(sarr[0]);
+        if (m !== null && m !== undefined) {
+            ok = true;    
+        }        
+    }
+    t.equal(ok , true, get_notice(t, 'get rdep usage'));
     t.end();
 });

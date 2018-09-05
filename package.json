@@ -1,6 +1,6 @@
 {
   "name": "extargsparse",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "extension parser for node js",
   "main": "index.js",
   "repository": {
@@ -13,7 +13,7 @@
   "devDependencies": {
     "tape": "latest",
     "mktemp": "latest",
-    "upath" : "latest"
+    "upath": "latest"
   },
   "keywords": [
     "command",
